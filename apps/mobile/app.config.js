@@ -14,7 +14,6 @@ module.exports = {
     },
     plugins: [
       ['expo-camera', { cameraPermission: 'Allow access to scan Pashu Aadhar tags.' }],
-      ['expo-sqlite'],
     ],
   },
 };
