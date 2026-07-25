@@ -1,11 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = '__API_URL__'; // Replaced at build time
+import { Platform } from 'react-native';
+
+const getDefaultUrl = () => {
+  if (Platform.OS === 'android') return 'http://10.0.2.2:3000';
+  if (Platform.OS === 'ios') return 'http://localhost:3000';
+  return 'http://localhost:3000';
+};
+
+let API_URL = getDefaultUrl();
 
 const getBaseUrl = async () => {
   const stored = await AsyncStorage.getItem('api_url');
   return stored || API_URL;
 };
+
+export const setApiUrl = async (url: string) => {
+  await AsyncStorage.setItem('api_url', url.replace(/\/+$/, ''));
+  API_URL = url;
+};
+
+export const getApiUrl = async () => getBaseUrl();
 
 const getToken = async () => AsyncStorage.getItem('auth_token');
 

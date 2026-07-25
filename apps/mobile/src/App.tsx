@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './context/AuthContext';
@@ -31,6 +31,7 @@ export default function App() {
   if (!dbReady) {
     return (
       <View style={styles.center}>
+        <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.loadingText}>Initializing...</Text>
       </View>
     );
@@ -48,6 +49,6 @@ export default function App() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2E7D32' },
-  loadingText: { color: '#fff', fontSize: 20, fontWeight: '600' },
+  loadingText: { color: '#fff', fontSize: 20, fontWeight: '600', marginTop: 16 },
   errorText: { color: '#fff', fontSize: 16, textAlign: 'center', padding: 24 },
 });

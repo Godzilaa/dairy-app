@@ -3,6 +3,7 @@ import { memoryAdapter } from 'better-auth/adapters/memory';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import * as authSchema from '../db/schema';
 
 const connectionString = process.env.DATABASE_URL || '';
 
@@ -14,23 +15,8 @@ let database:
 
 if (usePostgres) {
   const pgClient = postgres(connectionString, { prepare: false });
-  const db = drizzle(pgClient, {
-    schema: {
-      user: null as any,
-      session: null as any,
-      account: null as any,
-      verification: null as any,
-    },
-  });
-  database = drizzleAdapter(db, {
-    provider: 'pg',
-    schema: {
-      user: null as any,
-      session: null as any,
-      account: null as any,
-      verification: null as any,
-    },
-  });
+  const db = drizzle(pgClient, { schema: authSchema });
+  database = drizzleAdapter(db, { provider: 'pg' });
 } else {
   database = memoryAdapter({
     user: [],
@@ -42,16 +28,13 @@ if (usePostgres) {
 
 export const auth = betterAuth({
   database,
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
   emailAndPassword: {
     enabled: true,
     async sendResetPassword(url, user) {},
   },
   user: {
     additionalFields: {
-      name: {
-        type: 'string',
-        required: false,
-      },
       phone: {
         type: 'string',
         required: false,
