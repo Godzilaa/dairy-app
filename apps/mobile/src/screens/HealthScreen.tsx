@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localHealth } from '../services/database';
 
@@ -37,6 +38,10 @@ export default function HealthScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <MaterialIcons name="local-hospital" size={24} color="#2E7D32" />
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('health.title')}</Text>
+      </View>
       <View style={styles.filters}>
         <TouchableOpacity
           style={[styles.filterBtn, filter === 'all' && styles.filterActive]}

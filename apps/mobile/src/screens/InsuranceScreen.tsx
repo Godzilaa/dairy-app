@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localInsurance } from '../services/database';
 
@@ -24,6 +25,10 @@ export default function InsuranceScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <MaterialIcons name="verified-user" size={24} color="#2E7D32" />
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('insurance.title')}</Text>
+      </View>
       <FlatList
         data={records}
         keyExtractor={(_, i) => String(i)}

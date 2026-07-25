@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { localCows } from '../services/database';
@@ -110,6 +111,10 @@ export default function CowsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <MaterialIcons name="pets" size={24} color="#2E7D32" />
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('cow.title')}</Text>
+      </View>
       <View style={styles.searchRow}>
         <TextInput
           style={[styles.searchInput, { flex: 1 }]}

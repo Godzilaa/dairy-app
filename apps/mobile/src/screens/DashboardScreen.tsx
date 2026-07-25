@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { localCows, localMilk, localHealth, localReproduction } from '../services/database';
@@ -50,9 +51,12 @@ export default function DashboardScreen() {
     <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      <Text style={styles.greeting}>
-        {t('dashboard.title')}, {user?.name}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <MaterialIcons name="dashboard" size={24} color="#2E7D32" />
+        <Text style={styles.greeting}>
+          {t('dashboard.title')}, {user?.name}
+        </Text>
+      </View>
 
       <View style={styles.cardsRow}>
         <Card title={t('dashboard.totalCows')} value={String(stats.totalCows)} color="#2E7D32" />

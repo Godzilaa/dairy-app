@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { localCows } from '../services/database';
@@ -21,7 +22,10 @@ export default function CowDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.cowId}>{cow.cowId}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <MaterialIcons name="info-outline" size={24} color="#2E7D32" />
+          <Text style={styles.cowId}>{cow.cowId}</Text>
+        </View>
         <Text style={styles.name}>{cow.name}</Text>
       </View>
 

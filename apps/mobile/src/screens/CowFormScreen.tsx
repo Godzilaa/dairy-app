@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { localCows } from '../services/database';
@@ -84,6 +85,10 @@ export default function CowFormScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <MaterialIcons name="add-circle-outline" size={24} color="#2E7D32" />
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{editCow ? 'Edit Cow' : 'Register Cow'}</Text>
+      </View>
       <Text style={styles.label}>{t('cow.cowId')}</Text>
       <TextInput style={styles.input} value={cowId} editable={false} />
 

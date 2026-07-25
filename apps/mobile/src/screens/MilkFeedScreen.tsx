@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TextInput, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localMilk } from '../services/database';
 
@@ -40,7 +41,10 @@ export default function MilkFeedScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>{t('dashboard.todayMilk')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <MaterialIcons name="local-drink" size={24} color="#2E7D32" />
+          <Text style={styles.totalLabel}>{t('dashboard.todayMilk')}</Text>
+        </View>
         <Text style={styles.totalValue}>{todayTotal.toFixed(1)} L</Text>
       </View>
       <TextInput

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localReproduction } from '../services/database';
 
@@ -44,6 +45,10 @@ export default function ReproductionScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <MaterialIcons name="child-care" size={24} color="#2E7D32" />
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('reproduction.title')}</Text>
+      </View>
       <View style={styles.tabs}>
         <TouchableOpacity
           style={[styles.tab, tab === 'female' && styles.tabActive]}
