@@ -1,39 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DEFAULT_API_URL = 'https://dairy-api-jia4.onrender.com';
+const API_URL = 'https://dairy-api-jia4.onrender.com';
 
-const getDefaultUrl = () => DEFAULT_API_URL;
-
-let API_URL = getDefaultUrl();
-
-const getBaseUrl = async () => {
-  const stored = await AsyncStorage.getItem('api_url');
-  return stored || API_URL;
-};
-
-export const setApiUrl = async (url: string) => {
-  const clean = url.replace(/\/+$/, '');
-  await AsyncStorage.setItem('api_url', clean);
-  API_URL = clean;
-};
-
-export const getApiUrl = async () => {
-  const stored = await AsyncStorage.getItem('api_url');
-  return stored || API_URL;
-};
-
-const TIMEOUT = 30000;
-
-const fetchWithTimeout = (url: string, opts: RequestInit = {}) => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT);
-  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+const authFetch = async (path: string, opts?: RequestInit) => {
+  const url = `${API_URL}${path}`;
+  console.log('[API]', opts?.method || 'GET', url);
+  try {
+    const res = await fetch(url, opts);
+    console.log('[API] response', res.status);
+    return res;
+  } catch (e: any) {
+    console.log('[API] error', e.name, e.message);
+    throw new Error(`Network error: ${e.message}`);
+  }
 };
 
 export const authApi = {
   signIn: async (email: string, password: string) => {
-    const base = await getBaseUrl();
-    const res = await fetchWithTimeout(`${base}/api/auth/sign-in/email`, {
+    const res = await authFetch('/api/auth/sign-in/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -48,8 +32,7 @@ export const authApi = {
   },
 
   signUp: async (email: string, password: string, name: string) => {
-    const base = await getBaseUrl();
-    const res = await fetchWithTimeout(`${base}/api/auth/sign-up/email`, {
+    const res = await authFetch('/api/auth/sign-up/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name }),
@@ -77,9 +60,8 @@ export const authApi = {
 
 export const pashuAadharApi = {
   lookup: async (tagId: string) => {
-    const base = await getBaseUrl();
     const token = await AsyncStorage.getItem('auth_token');
-    const res = await fetchWithTimeout(`${base}/api/pashu-aadhar/lookup/${tagId}`, {
+    const res = await authFetch(`/api/pashu-aadhar/lookup/${tagId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;

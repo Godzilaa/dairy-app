@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { getApiUrl, setApiUrl } from '../services/api';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -12,11 +11,6 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [loading, setLoading] = useState(false);
-  const [serverUrl, setServerUrl] = useState('');
-
-  useEffect(() => {
-    getApiUrl().then(setServerUrl);
-  }, []);
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -27,7 +21,6 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Name is required');
       return;
     }
-    await setApiUrl(serverUrl);
     setLoading(true);
     try {
       if (mode === 'signin') {
@@ -49,17 +42,6 @@ export default function LoginScreen() {
         <Text style={styles.tagline}>{t('app.tagline')}</Text>
       </View>
       <View style={styles.form}>
-        <View style={styles.serverSection}>
-          <Text style={styles.label}>Server URL</Text>
-          <TextInput
-            style={styles.input}
-            value={serverUrl}
-            onChangeText={setServerUrl}
-            placeholder="http://192.168.29.52:3000"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
         {mode === 'signup' && (
           <>
             <Text style={styles.label}>Name</Text>
@@ -129,5 +111,4 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
   switchText: { color: '#2E7D32', textAlign: 'center', marginTop: 16, fontSize: 14 },
-  serverSection: { marginBottom: 8 },
 });
