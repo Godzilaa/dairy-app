@@ -1,12 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Platform } from 'react-native';
+const DEFAULT_API_URL = 'https://dairy-api-jia4.onrender.com';
 
-const getDefaultUrl = () => {
-  if (Platform.OS === 'android') return 'http://192.168.29.52:3000';
-  if (Platform.OS === 'ios') return 'http://localhost:3000';
-  return 'http://localhost:3000';
-};
+const getDefaultUrl = () => DEFAULT_API_URL;
 
 let API_URL = getDefaultUrl();
 
@@ -66,7 +62,7 @@ export const authApi = {
   getSession: async () => {
     const base = await getBaseUrl();
     const token = await AsyncStorage.getItem('auth_token');
-    const res = await fetchWithTimeout(`${base}/api/auth/session`, {
+    const res = await fetchWithTimeout(`${base}/api/auth/get-session`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
