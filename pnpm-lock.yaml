@@ -106,7 +106,7 @@ importers:
   apps/mobile:
     dependencies:
       '@dairy/shared':
-        specifier: workspace:*
+        specifier: file:../../packages/shared
         version: link:../../packages/shared
       '@expo/vector-icons':
         specifier: ^15.1.1
