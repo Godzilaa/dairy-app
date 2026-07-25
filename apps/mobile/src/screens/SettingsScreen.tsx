@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import i18n from '../i18n';
-import { setApiUrl, getApiUrl } from '../services/api';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -14,23 +13,9 @@ const LANGUAGES = [
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
-  const [apiUrl, setApiUrlState] = useState('');
-
-  useEffect(() => {
-    getApiUrl().then(setApiUrlState);
-  }, []);
 
   const changeLanguage = (code: string) => {
     i18n.changeLanguage(code);
-  };
-
-  const saveApiUrl = async () => {
-    if (!apiUrl.trim()) {
-      Alert.alert('Error', 'URL cannot be empty');
-      return;
-    }
-    await setApiUrl(apiUrl.trim());
-    Alert.alert('Saved', 'API URL updated');
   };
 
   const handleLogout = () => {
@@ -61,21 +46,6 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>API Server URL</Text>
-        <TextInput
-          style={styles.input}
-          value={apiUrl}
-          onChangeText={setApiUrlState}
-          placeholder="http://192.168.29.52:3000"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity style={styles.saveBtn} onPress={saveApiUrl}>
-          <Text style={styles.saveBtnText}>Save</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.sync')}</Text>
         <Text style={styles.hint}>Data is stored locally on this device.</Text>
         <Text style={styles.hint}>Cloud sync will be available in a future update.</Text>
@@ -96,12 +66,6 @@ const styles = StyleSheet.create({
   langBtn: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   langText: { fontSize: 15, color: '#2E7D32' },
   hint: { fontSize: 13, color: '#999', marginBottom: 4 },
-  input: {
-    backgroundColor: '#F5F5F5', borderRadius: 8, padding: 12, fontSize: 14,
-    borderWidth: 1, borderColor: '#E0E0E0', marginBottom: 8,
-  },
-  saveBtn: { backgroundColor: '#2E7D32', borderRadius: 8, padding: 12, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   logoutBtn: { backgroundColor: '#fff', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#C62828', marginTop: 8 },
   logoutText: { color: '#C62828', fontSize: 16, fontWeight: '600' },
 });
