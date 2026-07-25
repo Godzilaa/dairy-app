@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: dairy-api
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @dairy/api run build
+    startCommand: node dist/main
+    healthCheckPath: /api/auth/session
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DATABASE_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: TRUSTED_ORIGINS
+        value: https://*.onrender.com,http://localhost:8081
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: PASHU_AADHAR_API_ENABLED
+        value: "false"
