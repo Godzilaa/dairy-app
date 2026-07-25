@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 21.2.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile"
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile"
+    },
+    "production": {
+      "autoIncrement": true,
+      "channel": "production",
+      "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
