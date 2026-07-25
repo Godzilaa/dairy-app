@@ -12,7 +12,6 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [loading, setLoading] = useState(false);
-  const [showServer, setShowServer] = useState(false);
   const [serverUrl, setServerUrl] = useState('');
 
   useEffect(() => {
@@ -47,24 +46,20 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.appName}>{t('app.name')}</Text>
-        <TouchableOpacity onLongPress={() => setShowServer(!showServer)}>
-          <Text style={styles.tagline}>{t('app.tagline')}</Text>
-        </TouchableOpacity>
+        <Text style={styles.tagline}>{t('app.tagline')}</Text>
       </View>
       <View style={styles.form}>
-        {showServer && (
-          <View style={styles.serverSection}>
-            <Text style={styles.label}>Server URL</Text>
-            <TextInput
-              style={styles.input}
-              value={serverUrl}
-              onChangeText={setServerUrl}
-              placeholder="http://192.168.29.52:3000"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-        )}
+        <View style={styles.serverSection}>
+          <Text style={styles.label}>Server URL</Text>
+          <TextInput
+            style={styles.input}
+            value={serverUrl}
+            onChangeText={setServerUrl}
+            placeholder="http://192.168.29.52:3000"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
         {mode === 'signup' && (
           <>
             <Text style={styles.label}>Name</Text>

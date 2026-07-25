@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 const getDefaultUrl = () => {
-  if (Platform.OS === 'android') return 'http://10.0.2.2:3000';
+  if (Platform.OS === 'android') return 'http://192.168.29.52:3000';
   if (Platform.OS === 'ios') return 'http://localhost:3000';
   return 'http://localhost:3000';
 };
