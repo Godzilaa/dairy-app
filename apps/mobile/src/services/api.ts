@@ -22,7 +22,7 @@ export const getApiUrl = async () => {
   return stored || API_URL;
 };
 
-const TIMEOUT = 8000;
+const TIMEOUT = 30000;
 
 const fetchWithTimeout = (url: string, opts: RequestInit = {}) => {
   const controller = new AbortController();
@@ -79,7 +79,7 @@ export const pashuAadharApi = {
   lookup: async (tagId: string) => {
     const base = await getBaseUrl();
     const token = await AsyncStorage.getItem('auth_token');
-    const res = await fetch(`${base}/api/pashu-aadhar/lookup/${tagId}`, {
+    const res = await fetchWithTimeout(`${base}/api/pashu-aadhar/lookup/${tagId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
