@@ -16,18 +16,30 @@ const getBaseUrl = async () => {
 };
 
 export const setApiUrl = async (url: string) => {
-  await AsyncStorage.setItem('api_url', url.replace(/\/+$/, ''));
-  API_URL = url;
+  const clean = url.replace(/\/+$/, '');
+  await AsyncStorage.setItem('api_url', clean);
+  API_URL = clean;
 };
 
-export const getApiUrl = async () => getBaseUrl();
+export const getApiUrl = async () => {
+  const stored = await AsyncStorage.getItem('api_url');
+  return stored || API_URL;
+};
+
+const TIMEOUT = 8000;
+
+const fetchWithTimeout = (url: string, opts: RequestInit = {}) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT);
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
 
 const getToken = async () => AsyncStorage.getItem('auth_token');
 
 export const authApi = {
   signIn: async (email: string, password: string) => {
     const base = await getBaseUrl();
-    const res = await fetch(`${base}/api/auth/sign-in/email`, {
+    const res = await fetchWithTimeout(`${base}/api/auth/sign-in/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -40,7 +52,7 @@ export const authApi = {
 
   signUp: async (email: string, password: string, name: string) => {
     const base = await getBaseUrl();
-    const res = await fetch(`${base}/api/auth/sign-up/email`, {
+    const res = await fetchWithTimeout(`${base}/api/auth/sign-up/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name }),
@@ -54,7 +66,7 @@ export const authApi = {
   getSession: async () => {
     const base = await getBaseUrl();
     const token = await AsyncStorage.getItem('auth_token');
-    const res = await fetch(`${base}/api/auth/session`, {
+    const res = await fetchWithTimeout(`${base}/api/auth/session`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
