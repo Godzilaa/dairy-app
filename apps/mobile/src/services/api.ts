@@ -30,8 +30,6 @@ const fetchWithTimeout = (url: string, opts: RequestInit = {}) => {
   return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
 };
 
-const getToken = async () => AsyncStorage.getItem('auth_token');
-
 export const authApi = {
   signIn: async (email: string, password: string) => {
     const base = await getBaseUrl();
@@ -42,7 +40,10 @@ export const authApi = {
     });
     if (!res.ok) throw new Error((await res.json()).error || 'Login failed');
     const data = await res.json();
-    if (data.token) await AsyncStorage.setItem('auth_token', data.token);
+    if (data.token) {
+      await AsyncStorage.setItem('auth_token', data.token);
+      await AsyncStorage.setItem('user_data', JSON.stringify(data.user));
+    }
     return data;
   },
 
@@ -55,18 +56,18 @@ export const authApi = {
     });
     if (!res.ok) throw new Error((await res.json()).error || 'Sign up failed');
     const data = await res.json();
-    if (data.token) await AsyncStorage.setItem('auth_token', data.token);
+    if (data.token) {
+      await AsyncStorage.setItem('auth_token', data.token);
+      await AsyncStorage.setItem('user_data', JSON.stringify(data.user));
+    }
     return data;
   },
 
   getSession: async () => {
-    const base = await getBaseUrl();
     const token = await AsyncStorage.getItem('auth_token');
-    const res = await fetchWithTimeout(`${base}/api/auth/get-session`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    return res.json();
+    const raw = await AsyncStorage.getItem('user_data');
+    if (!token || !raw) return null;
+    return { user: JSON.parse(raw), session: { token } };
   },
 
   signOut: async () => {

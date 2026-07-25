@@ -36,12 +36,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loadUser = async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
-      if (token) {
-        const session = await authApi.getSession();
-        if (session?.user) {
-          setUser(session.user);
-        }
+      const session = await authApi.getSession();
+      if (session?.user) {
+        setUser(session.user);
       }
     } catch {} finally {
       setIsLoading(false);
@@ -50,12 +47,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const res = await authApi.signIn(email, password);
-    if (res.token) {
-      await AsyncStorage.setItem('auth_token', res.token);
-    }
-    if (res.session?.token) {
-      await AsyncStorage.setItem('auth_token', res.session.token);
-    }
     if (res.user) {
       setUser(res.user);
     }
@@ -63,12 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, name: string) => {
     const res = await authApi.signUp(email, password, name);
-    if (res.token) {
-      await AsyncStorage.setItem('auth_token', res.token);
-    }
-    if (res.session?.token) {
-      await AsyncStorage.setItem('auth_token', res.session.token);
-    }
     if (res.user) {
       setUser(res.user);
     }
