@@ -27,9 +27,14 @@ export const initDatabase = async (): Promise<void> => {
     `CREATE TABLE IF NOT EXISTS health_records (
       id TEXT PRIMARY KEY,
       cowId TEXT,
+      recordType TEXT DEFAULT 'vaccination',
       vaccinationType TEXT,
       date TEXT,
       nextDueDate TEXT,
+      medicineName TEXT,
+      treatmentPeriod TEXT,
+      treatmentMode TEXT,
+      medicinesGiven TEXT,
       notes TEXT,
       createdAt TEXT,
       updatedAt TEXT
@@ -90,6 +95,7 @@ export const initDatabase = async (): Promise<void> => {
       father TEXT,
       dob TEXT,
       gender TEXT,
+      photo TEXT,
       createdAt TEXT,
       updatedAt TEXT
     )`
@@ -108,6 +114,46 @@ export const initDatabase = async (): Promise<void> => {
       updatedAt TEXT
     )`
   );
+  await db.execAsync(
+    `CREATE TABLE IF NOT EXISTS heat_records (
+      id TEXT PRIMARY KEY,
+      cowId TEXT,
+      heatIdentificationDate TEXT,
+      conceptionDate TEXT,
+      repeatHeatDate TEXT,
+      notes TEXT,
+      createdAt TEXT,
+      updatedAt TEXT
+    )`
+  );
+  await db.execAsync(
+    `CREATE TABLE IF NOT EXISTS custom_vaccines (
+      id TEXT PRIMARY KEY,
+      name TEXT UNIQUE,
+      createdAt TEXT
+    )`
+  );
+
+  await runMigrations();
+};
+
+// Add columns that may be missing on databases created by older app versions.
+// SQLite throws "duplicate column name" if the column already exists — safe to ignore.
+const addColumn = async (table: string, column: string, type: string): Promise<void> => {
+  try {
+    await db.execAsync(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  } catch {
+    /* column already exists */
+  }
+};
+
+const runMigrations = async (): Promise<void> => {
+  await addColumn('health_records', 'recordType', "TEXT DEFAULT 'vaccination'");
+  await addColumn('health_records', 'medicineName', 'TEXT');
+  await addColumn('health_records', 'treatmentPeriod', 'TEXT');
+  await addColumn('health_records', 'treatmentMode', 'TEXT');
+  await addColumn('health_records', 'medicinesGiven', 'TEXT');
+  await addColumn('calves', 'photo', 'TEXT');
 };
 
 export const getDb = () => db;
@@ -155,10 +201,10 @@ export const localCows = {
   update: async (id: string, data: any): Promise<any> => {
     const now = new Date().toISOString();
     await db.runAsync(
-      `UPDATE cows SET name=?, breed=?, pashuAadhar=?, dob=?, mother=?, father=?, status=?, registrationMethod=?, updatedAt=? WHERE id=?`,
+      `UPDATE cows SET name=?, breed=?, pashuAadhar=?, dob=?, mother=?, father=?, status=?, photo=?, registrationMethod=?, updatedAt=? WHERE id=?`,
       [data.name, data.breed, data.pashuAadhar || null, data.dob || null,
        data.mother || null, data.father || null, data.status || 'Active',
-       data.registrationMethod || null, now, id]
+       data.photo || null, data.registrationMethod || null, now, id]
     );
     return { id, ...data };
   },
@@ -188,8 +234,26 @@ export const localHealth = {
     const id = uuid();
     const now = new Date().toISOString();
     await db.runAsync(
-      `INSERT INTO health_records (id, cowId, vaccinationType, date, nextDueDate, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?)`,
-      [id, data.cowId, data.vaccinationType, data.date || null, data.nextDueDate || null, data.notes || null, now, now]
+      `INSERT INTO health_records
+        (id, cowId, recordType, vaccinationType, date, nextDueDate, medicineName, treatmentPeriod, treatmentMode, medicinesGiven, notes, createdAt, updatedAt)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [id, data.cowId, data.recordType || 'vaccination', data.vaccinationType || null,
+       data.date || null, data.nextDueDate || null, data.medicineName || null,
+       data.treatmentPeriod || null, data.treatmentMode || null, data.medicinesGiven || null,
+       data.notes || null, now, now]
+    );
+    return { id, ...data };
+  },
+
+  update: async (id: string, data: any): Promise<any> => {
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `UPDATE health_records SET
+        vaccinationType=?, date=?, nextDueDate=?, medicineName=?, treatmentPeriod=?,
+        treatmentMode=?, medicinesGiven=?, notes=?, updatedAt=? WHERE id=?`,
+      [data.vaccinationType || null, data.date || null, data.nextDueDate || null,
+       data.medicineName || null, data.treatmentPeriod || null, data.treatmentMode || null,
+       data.medicinesGiven || null, data.notes || null, now, id]
     );
     return { id, ...data };
   },
@@ -238,6 +302,15 @@ export const localMilk = {
     );
     return { id, ...data };
   },
+
+  update: async (id: string, data: any): Promise<any> => {
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `UPDATE milk_feed SET milkingDate=?, morningMilk=?, eveningMilk=?, feedGiven=?, notes=?, updatedAt=? WHERE id=?`,
+      [data.milkingDate, data.morningMilk ?? null, data.eveningMilk ?? null, data.feedGiven || null, data.notes || null, now, id]
+    );
+    return { id, ...data };
+  },
 };
 
 export const localReproduction = {
@@ -258,6 +331,94 @@ export const localReproduction = {
 
   createFemale: (data: any) => localCreate('reproduction_female', data),
   createMale: (data: any) => localCreate('reproduction_male', data),
+};
+
+export const localHeat = {
+  getAll: async (cowId?: string): Promise<any[]> => {
+    if (cowId) {
+      return db.getAllAsync(
+        'SELECT * FROM heat_records WHERE cowId = ? ORDER BY heatIdentificationDate DESC, createdAt DESC',
+        [cowId]
+      );
+    }
+    return db.getAllAsync('SELECT * FROM heat_records ORDER BY heatIdentificationDate DESC, createdAt DESC');
+  },
+
+  create: (data: any) => localCreate('heat_records', data),
+};
+
+// Aggregates heat + medication follow-up dates for the dashboard calendar.
+export type CalendarEvent = {
+  date: string;        // YYYY-MM-DD
+  type: 'heat' | 'repeatHeat' | 'medication' | 'treatment';
+  cowId: string;
+  title: string;
+};
+
+export const localEvents = {
+  getAll: async (): Promise<CalendarEvent[]> => {
+    const events: CalendarEvent[] = [];
+
+    // Medication / vaccination follow-ups (next due date)
+    const health = await db.getAllAsync<any>(
+      `SELECT cowId, recordType, vaccinationType, medicineName, date, nextDueDate FROM health_records`
+    );
+    for (const h of health) {
+      if (h.nextDueDate) {
+        events.push({
+          date: h.nextDueDate,
+          type: 'medication',
+          cowId: h.cowId,
+          title: `${h.vaccinationType || h.medicineName || 'Vaccination'} due`,
+        });
+      }
+      if (h.recordType === 'treatment' && h.date) {
+        events.push({
+          date: h.date,
+          type: 'treatment',
+          cowId: h.cowId,
+          title: `${h.medicineName || 'Treatment'}`,
+        });
+      }
+    }
+
+    // Heat cycle events
+    const heat = await db.getAllAsync<any>(
+      `SELECT cowId, heatIdentificationDate, repeatHeatDate FROM heat_records`
+    );
+    for (const r of heat) {
+      if (r.heatIdentificationDate) {
+        events.push({ date: r.heatIdentificationDate, type: 'heat', cowId: r.cowId, title: 'Heat identified' });
+      }
+      if (r.repeatHeatDate) {
+        events.push({ date: r.repeatHeatDate, type: 'repeatHeat', cowId: r.cowId, title: 'Repeat heat expected' });
+      }
+    }
+
+    return events;
+  },
+};
+
+export const localVaccines = {
+  // Built-in vaccine types every farm needs, shown first.
+  DEFAULTS: ['FMD', 'LSD', 'Deworming'],
+
+  getCustom: async (): Promise<string[]> => {
+    const rows = await db.getAllAsync<{ name: string }>(
+      'SELECT name FROM custom_vaccines ORDER BY createdAt ASC'
+    );
+    return rows.map((r) => r.name);
+  },
+
+  addCustom: async (name: string): Promise<void> => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const now = new Date().toISOString();
+    await db.runAsync(
+      'INSERT OR IGNORE INTO custom_vaccines (id, name, createdAt) VALUES (?,?,?)',
+      [uuid(), trimmed, now]
+    );
+  },
 };
 
 export const localCalves = {

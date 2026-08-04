@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -22,7 +22,14 @@ export default function CowDetailScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {cow.photo ? (
+          <Image source={{ uri: cow.photo }} style={styles.photo} />
+        ) : (
+          <View style={styles.photoPlaceholder}>
+            <MaterialIcons name="pets" size={44} color="#A5D6A7" />
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
           <MaterialIcons name="info-outline" size={24} color="#2E7D32" />
           <Text style={styles.cowId}>{cow.cowId}</Text>
         </View>
@@ -46,14 +53,11 @@ export default function CowDetailScreen() {
         <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('MilkFeed')}>
           <Text style={styles.actionText}>{t('milk.title')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Reproduction')}>
-          <Text style={styles.actionText}>{t('reproduction.title')}</Text>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('HeatTracking', { cowId: cow.cowId })}>
+          <Text style={styles.actionText}>{t('heat.title')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Calves')}>
           <Text style={styles.actionText}>{t('calves.title')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Insurance')}>
-          <Text style={styles.actionText}>{t('insurance.title')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -76,6 +80,11 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
   header: { alignItems: 'center', marginBottom: 24 },
+  photo: { width: 110, height: 110, borderRadius: 55, borderWidth: 2, borderColor: '#2E7D32' },
+  photoPlaceholder: {
+    width: 110, height: 110, borderRadius: 55, backgroundColor: '#E8F5E9',
+    alignItems: 'center', justifyContent: 'center',
+  },
   cowId: { fontSize: 14, color: '#666', fontWeight: '600' },
   name: { fontSize: 28, fontWeight: 'bold', color: '#333', marginTop: 4 },
   section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, elevation: 2 },

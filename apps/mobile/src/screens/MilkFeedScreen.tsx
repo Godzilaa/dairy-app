@@ -1,14 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localMilk } from '../services/database';
+
+const today = () => new Date().toISOString().split('T')[0];
 
 export default function MilkFeedScreen() {
   const { t } = useTranslation();
   const [records, setRecords] = useState<any[]>([]);
   const [cowId, setCowId] = useState('');
   const [todayTotal, setTodayTotal] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Add-entry form state
+  const [fCowId, setFCowId] = useState('');
+  const [fDate, setFDate] = useState(today());
+  const [fMorning, setFMorning] = useState('');
+  const [fEvening, setFEvening] = useState('');
+  const [fFeed, setFFeed] = useState('');
+  const [fNotes, setFNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const loadRecords = async () => {
     try {
@@ -21,11 +34,57 @@ export default function MilkFeedScreen() {
 
   useEffect(() => { loadRecords(); }, [cowId]);
 
+  const resetForm = () => {
+    setEditingId(null);
+    setFCowId(''); setFDate(today()); setFMorning(''); setFEvening(''); setFFeed(''); setFNotes('');
+  };
+
+  const openAdd = () => { resetForm(); setModalVisible(true); };
+
+  const openEdit = (item: any) => {
+    setEditingId(item.id);
+    setFCowId(item.cowId || '');
+    setFDate(item.milkingDate || today());
+    setFMorning(item.morningMilk != null ? String(item.morningMilk) : '');
+    setFEvening(item.eveningMilk != null ? String(item.eveningMilk) : '');
+    setFFeed(item.feedGiven || '');
+    setFNotes(item.notes || '');
+    setModalVisible(true);
+  };
+
+  const handleSave = async () => {
+    if (!fCowId.trim()) { Alert.alert('Error', 'Cow ID is required'); return; }
+    if (!fMorning && !fEvening) { Alert.alert('Error', 'Enter morning or evening milk'); return; }
+    setSaving(true);
+    try {
+      const payload = {
+        cowId: fCowId.trim(),
+        milkingDate: fDate || today(),
+        morningMilk: fMorning ? parseFloat(fMorning) : undefined,
+        eveningMilk: fEvening ? parseFloat(fEvening) : undefined,
+        feedGiven: fFeed || undefined,
+        notes: fNotes || undefined,
+      };
+      if (editingId) await localMilk.update(editingId, payload);
+      else await localMilk.create(payload);
+      setModalVisible(false);
+      resetForm();
+      await loadRecords();
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={() => openEdit(item)}>
       <View style={styles.cardHeader}>
         <Text style={styles.cowId}>{item.cowId}</Text>
-        <Text style={styles.date}>{item.milkingDate}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={styles.date}>{item.milkingDate}</Text>
+          <MaterialIcons name="edit" size={15} color="#bbb" />
+        </View>
       </View>
       <View style={styles.milkRow}>
         <Text style={styles.milkLabel}>{t('milk.morningMilk')}: {item.morningMilk ?? '-'} L</Text>
@@ -35,7 +94,7 @@ export default function MilkFeedScreen() {
         </Text>
       </View>
       {item.feedGiven && <Text style={styles.feed}>{t('milk.feedGiven')}: {item.feedGiven}</Text>}
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -59,6 +118,45 @@ export default function MilkFeedScreen() {
         renderItem={renderItem}
         ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
       />
+
+      <TouchableOpacity style={styles.fab} onPress={openAdd}>
+        <MaterialIcons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
+
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{editingId ? t('milk.editRecord') : t('milk.addRecord')}</Text>
+            <ScrollView>
+              <Text style={styles.label}>{t('cow.cowId')} *</Text>
+              <TextInput style={styles.modalInput} value={fCowId} onChangeText={setFCowId} placeholder="C001" autoCapitalize="characters" editable={!editingId} />
+
+              <Text style={styles.label}>{t('milk.date')}</Text>
+              <TextInput style={styles.modalInput} value={fDate} onChangeText={setFDate} placeholder="YYYY-MM-DD" />
+
+              <Text style={styles.label}>{t('milk.morningMilk')}</Text>
+              <TextInput style={styles.modalInput} value={fMorning} onChangeText={setFMorning} keyboardType="decimal-pad" placeholder="0.0" />
+
+              <Text style={styles.label}>{t('milk.eveningMilk')}</Text>
+              <TextInput style={styles.modalInput} value={fEvening} onChangeText={setFEvening} keyboardType="decimal-pad" placeholder="0.0" />
+
+              <Text style={styles.label}>{t('milk.feedGiven')}</Text>
+              <TextInput style={styles.modalInput} value={fFeed} onChangeText={setFFeed} placeholder="Feed / fodder" />
+
+              <Text style={styles.label}>{t('milk.notes')}</Text>
+              <TextInput style={styles.modalInput} value={fNotes} onChangeText={setFNotes} />
+            </ScrollView>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -80,4 +178,18 @@ const styles = StyleSheet.create({
   milkTotal: { fontSize: 15, fontWeight: 'bold', color: '#E65100', marginTop: 4 },
   feed: { fontSize: 13, color: '#666', marginTop: 4 },
   empty: { textAlign: 'center', marginTop: 48, color: '#999' },
+  fab: {
+    position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
+    backgroundColor: '#2E7D32', alignItems: 'center', justifyContent: 'center', elevation: 4,
+  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4, marginTop: 10 },
+  modalInput: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#E0E0E0' },
+  modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
+  cancelText: { color: '#666', fontWeight: '600' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#2E7D32', alignItems: 'center' },
+  saveText: { color: '#fff', fontWeight: '600' },
 });
