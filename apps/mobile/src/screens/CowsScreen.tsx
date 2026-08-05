@@ -86,6 +86,7 @@ export default function CowsScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Active': return '#2E7D32';
+      case 'Inactive': return '#9E9E9E';
       case 'Dry': return '#F57F17';
       case 'Sold': return '#C62828';
       case 'Deceased': return '#424242';

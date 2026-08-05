@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { localCows } from '../services/database';
 import { lookupPashuAadhar } from '../services/pashuAadharApi';
 import PashuAadharScanner from '../components/PashuAadharScanner';
@@ -23,6 +24,8 @@ export default function CowFormScreen() {
   const [father, setFather] = useState(editCow?.father || '');
   const [method, setMethod] = useState(editCow?.registrationMethod || '');
   const [cowId, setCowId] = useState(editCow?.cowId || '');
+  const [photo, setPhoto] = useState<string | null>(editCow?.photo || null);
+  const [status, setStatus] = useState(editCow?.status || 'Active');
   const [loading, setLoading] = useState(false);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
@@ -53,6 +56,34 @@ export default function CowFormScreen() {
     }
   };
 
+  const pickPhoto = async (fromCamera: boolean) => {
+    try {
+      const perm = fromCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission needed', `Please allow ${fromCamera ? 'camera' : 'photo'} access.`);
+        return;
+      }
+      const result = fromCamera
+        ? await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.5 })
+        : await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.5 });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setPhoto(result.assets[0].uri);
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    }
+  };
+
+  const choosePhoto = () => {
+    Alert.alert(t('cow.photo'), undefined, [
+      { text: t('cow.takePhoto'), onPress: () => pickPhoto(true) },
+      { text: t('cow.choosePhoto'), onPress: () => pickPhoto(false) },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  };
+
   const handleSave = async () => {
     if (!name || !breed) {
       Alert.alert('Error', 'Name and breed are required');
@@ -64,6 +95,8 @@ export default function CowFormScreen() {
         cowId,
         name,
         breed,
+        photo: photo || undefined,
+        status,
         pashuAadhar: pashuAadhar || undefined,
         dob: dob || undefined,
         mother: mother || undefined,
@@ -89,6 +122,22 @@ export default function CowFormScreen() {
         <MaterialIcons name="add-circle-outline" size={24} color="#2E7D32" />
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{editCow ? 'Edit Cow' : 'Register Cow'}</Text>
       </View>
+      <TouchableOpacity style={styles.photoPicker} onPress={choosePhoto}>
+        {photo ? (
+          <Image source={{ uri: photo }} style={styles.photo} />
+        ) : (
+          <View style={styles.photoPlaceholder}>
+            <MaterialIcons name="add-a-photo" size={36} color="#2E7D32" />
+            <Text style={styles.photoHint}>{t('cow.addPhoto')}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+      {photo && (
+        <TouchableOpacity onPress={choosePhoto}>
+          <Text style={styles.changePhoto}>{t('cow.changePhoto')}</Text>
+        </TouchableOpacity>
+      )}
+
       <Text style={styles.label}>{t('cow.cowId')}</Text>
       <TextInput style={styles.input} value={cowId} editable={false} />
 
@@ -146,6 +195,20 @@ export default function CowFormScreen() {
       <Text style={styles.label}>{t('cow.registrationMethod')}</Text>
       <TextInput style={styles.input} value={method} onChangeText={setMethod} placeholder="AI / NATURAL" />
 
+      <Text style={styles.label}>{t('cow.status')}</Text>
+      <View style={styles.statusRow}>
+        {['Active', 'Inactive', 'Dry', 'Sold', 'Deceased'].map((s) => (
+          <TouchableOpacity
+            key={s}
+            style={[styles.statusChip, status === s && styles.statusChipActive]}
+            onPress={() => setStatus(s)}>
+            <Text style={[styles.statusChipText, status === s && styles.statusChipTextActive]}>
+              {t(`cow.${s.toLowerCase()}`) || s}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('common.save')}</Text>}
       </TouchableOpacity>
@@ -165,6 +228,19 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#E0E0E0',
   },
+  photoPicker: { alignSelf: 'center', marginBottom: 8 },
+  photo: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#2E7D32' },
+  photoPlaceholder: {
+    width: 120, height: 120, borderRadius: 60, backgroundColor: '#E8F5E9',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#A5D6A7', borderStyle: 'dashed',
+  },
+  photoHint: { fontSize: 11, color: '#2E7D32', marginTop: 4 },
+  changePhoto: { textAlign: 'center', color: '#1565C0', fontSize: 13, marginBottom: 8, fontWeight: '600' },
+  statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  statusChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#EEEEEE' },
+  statusChipActive: { backgroundColor: '#2E7D32' },
+  statusChipText: { fontSize: 13, color: '#555' },
+  statusChipTextActive: { color: '#fff', fontWeight: '600' },
   tagRow: { flexDirection: 'row', gap: 10 },
   scanBtn: {
     backgroundColor: '#1565C0', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center',

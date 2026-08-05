@@ -13,9 +13,8 @@ import CowFormScreen from '../screens/CowFormScreen';
 import CowDetailScreen from '../screens/CowDetailScreen';
 import HealthScreen from '../screens/HealthScreen';
 import MilkFeedScreen from '../screens/MilkFeedScreen';
-import ReproductionScreen from '../screens/ReproductionScreen';
+import HeatTrackingScreen from '../screens/HeatTrackingScreen';
 import CalvesScreen from '../screens/CalvesScreen';
-import InsuranceScreen from '../screens/InsuranceScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -108,19 +107,14 @@ export default function AppNavigator() {
               options={{ title: 'Cow Details' }}
             />
             <Stack.Screen
-              name="Reproduction"
-              component={ReproductionScreen}
-              options={{ title: 'Reproduction' }}
+              name="HeatTracking"
+              component={HeatTrackingScreen}
+              options={{ title: 'Heat Tracking' }}
             />
             <Stack.Screen
               name="Calves"
               component={CalvesScreen}
               options={{ title: 'Calves & Bloodline' }}
-            />
-            <Stack.Screen
-              name="Insurance"
-              component={InsuranceScreen}
-              options={{ title: 'Insurance' }}
             />
           </>
         )}

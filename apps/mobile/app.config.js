@@ -14,6 +14,10 @@ module.exports = {
     },
     plugins: [
       ['expo-camera', { cameraPermission: 'Allow access to scan Pashu Aadhar tags.' }],
+      ['expo-image-picker', {
+        photosPermission: 'Allow access to add a photo for the cow profile.',
+        cameraPermission: 'Allow access to take a photo of the cow.',
+      }],
     ],
     extra: {
       eas: {
