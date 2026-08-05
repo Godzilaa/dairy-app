@@ -10,6 +10,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/expo": "^4.2.1",
     "@dairy/shared": "file:../../packages/shared",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -19,6 +20,7 @@
     "expo": "~54.0.36",
     "expo-camera": "~17.0.10",
     "expo-image-picker": "~17.0.11",
+    "expo-secure-store": "~15.0.8",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
     "i18next": "^23.11.0",
