@@ -311,6 +311,10 @@ export const localMilk = {
     );
     return { id, ...data };
   },
+
+  delete: async (id: string): Promise<void> => {
+    await db.runAsync('DELETE FROM milk_feed WHERE id = ?', [id]);
+  },
 };
 
 export const localReproduction = {
