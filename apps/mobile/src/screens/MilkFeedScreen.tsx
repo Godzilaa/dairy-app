@@ -77,6 +77,31 @@ export default function MilkFeedScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!editingId) return;
+    Alert.alert(
+      t('common.delete'),
+      'Delete this milk/feed record?',
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await localMilk.delete(editingId);
+              setModalVisible(false);
+              resetForm();
+              await loadRecords();
+            } catch (err: any) {
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity style={styles.card} onPress={() => openEdit(item)}>
       <View style={styles.cardHeader}>
@@ -154,6 +179,12 @@ export default function MilkFeedScreen() {
                 <Text style={styles.saveText}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
+            {editingId && (
+              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+                <MaterialIcons name="delete-outline" size={18} color="#C62828" />
+                <Text style={styles.deleteText}>{t('common.delete')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
@@ -192,4 +223,6 @@ const styles = StyleSheet.create({
   cancelText: { color: '#666', fontWeight: '600' },
   saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#2E7D32', alignItems: 'center' },
   saveText: { color: '#fff', fontWeight: '600' },
+  deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
+  deleteText: { color: '#C62828', fontWeight: '600' },
 });

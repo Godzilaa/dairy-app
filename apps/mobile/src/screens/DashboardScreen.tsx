@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   weekRow: { flexDirection: 'row' },
   weekday: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: '#999', paddingVertical: 4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: `${100 / 7}%`, aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
+  cell: { width: '14.2857%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   cellSelected: { backgroundColor: '#2E7D32' },
   cellToday: { backgroundColor: '#E8F5E9' },
   cellText: { fontSize: 14, color: '#333' },
