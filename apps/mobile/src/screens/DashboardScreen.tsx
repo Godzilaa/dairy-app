@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { localCows, localMilk, localEvents, CalendarEvent } from '../services/database';
 
@@ -23,8 +23,10 @@ const TYPE_COLOR: Record<CalendarEvent['type'], string> = {
 export default function DashboardScreen() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [stats, setStats] = useState({ totalCows: 0, activeCows: 0 });
+  const navigation = useNavigation<any>();
+  const [stats, setStats] = useState({ totalCows: 0, milkingCows: 0 });
   const [todayMilk, setTodayMilk] = useState(0);
+  const [monthDaily, setMonthDaily] = useState<{ date: string; total: number }[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -47,13 +49,24 @@ export default function DashboardScreen() {
     } catch {}
   };
 
+  // Milk series is keyed on the viewed month so it always matches the calendar,
+  // never a stale month captured by loadData's closure.
+  const loadMonthDaily = React.useCallback(() => {
+    localMilk.getMonthDaily(viewYear, viewMonth).then((md) => setMonthDaily(md || [])).catch(() => {});
+  }, [viewYear, viewMonth]);
+
   useEffect(() => { loadData(); }, []);
-  // Refresh whenever the tab regains focus so new heat/health entries appear.
-  useFocusEffect(React.useCallback(() => { loadData(); }, []));
+  useEffect(() => { loadMonthDaily(); }, [loadMonthDaily]);
+  // Refresh whenever the tab regains focus so new entries appear (current month too).
+  useFocusEffect(React.useCallback(() => {
+    loadData();
+    loadMonthDaily();
+  }, [loadMonthDaily]));
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadData();
+    loadMonthDaily();
     setRefreshing(false);
   };
 
@@ -97,11 +110,26 @@ export default function DashboardScreen() {
     return arr;
   }, [viewYear, viewMonth]);
 
-  const Card = ({ title, value, color }: { title: string; value: string; color: string }) => (
-    <View style={[styles.card, { borderLeftColor: color }]}>
+  // Monthly milk summary derived from the per-day series of the viewed month.
+  const summary = useMemo(() => {
+    const total = monthDaily.reduce((sum, d) => sum + (d.total || 0), 0);
+    const days = monthDaily.length;
+    const best = monthDaily.reduce(
+      (acc, d) => (d.total > acc.total ? { date: d.date, total: d.total } : acc),
+      { date: '', total: 0 }
+    );
+    return { total, avg: days ? total / days : 0, best, days };
+  }, [monthDaily]);
+
+  const Card = ({ title, value, color, onPress }: { title: string; value: string; color: string; onPress?: () => void }) => (
+    <TouchableOpacity
+      style={[styles.card, { borderLeftColor: color }]}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress}
+      onPress={onPress}>
       <Text style={styles.cardTitle}>{title}</Text>
       <Text style={[styles.cardValue, { color }]}>{value}</Text>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -114,9 +142,8 @@ export default function DashboardScreen() {
       </View>
 
       <View style={styles.cardsRow}>
-        <Card title={t('dashboard.totalCows')} value={String(stats.totalCows)} color="#2E7D32" />
-        <Card title={t('dashboard.activeCows')} value={String(stats.activeCows)} color="#1565C0" />
-        <Card title={t('dashboard.todayMilk')} value={`${todayMilk.toFixed(1)} L`} color="#F57F17" />
+        <Card title={t('dashboard.totalCows')} value={String(stats.totalCows)} color="#2E7D32" onPress={() => navigation.navigate('Cows')} />
+        <Card title={t('dashboard.todayMilk')} value={`${todayMilk.toFixed(1)} L`} color="#F57F17" onPress={() => navigation.navigate('MilkFeed')} />
       </View>
 
       {/* Calendar */}
@@ -166,6 +193,49 @@ export default function DashboardScreen() {
           <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: '#2E7D32' }]} /><Text style={styles.legendText}>{t('dashboard.legendMed')}</Text></View>
           <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: '#1565C0' }]} /><Text style={styles.legendText}>{t('dashboard.legendTreat')}</Text></View>
         </View>
+      </View>
+
+      {/* Monthly summary */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('dashboard.monthlySummary')} · {MONTHS[viewMonth]} {viewYear}</Text>
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>{t('dashboard.milkThisMonth')}</Text>
+            <Text style={[styles.summaryValue, { color: '#F57F17' }]}>{summary.total.toFixed(1)} L</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>{t('dashboard.avgPerDay')}</Text>
+            <Text style={[styles.summaryValue, { color: '#00897B' }]}>{summary.avg.toFixed(1)} L</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>{t('dashboard.bestDay')}</Text>
+            <Text style={[styles.summaryValue, { color: '#2E7D32' }]}>{summary.best.total.toFixed(1)} L</Text>
+            {!!summary.best.date && <Text style={styles.summarySub}>{summary.best.date.slice(8)} {MONTHS[viewMonth].slice(0, 3)}</Text>}
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>{t('dashboard.milkingCows')}</Text>
+            <Text style={[styles.summaryValue, { color: '#1565C0' }]}>{stats.milkingCows}</Text>
+          </View>
+        </View>
+
+        {/* Daily milk bar chart */}
+        <Text style={styles.chartTitle}>{t('dashboard.milkTrend')}</Text>
+        {monthDaily.length === 0 ? (
+          <Text style={styles.noEvents}>{t('common.noData')}</Text>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chart} contentContainerStyle={{ alignItems: 'flex-end' }}>
+            {monthDaily.map((d, i) => {
+              const h = summary.best.total > 0 ? Math.max(4, (d.total / summary.best.total) * 100) : 4;
+              return (
+                <View key={i} style={styles.barCol}>
+                  <Text style={styles.barValue}>{d.total.toFixed(0)}</Text>
+                  <View style={[styles.bar, { height: h }]} />
+                  <Text style={styles.barLabel}>{d.date.slice(8)}</Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       {/* Selected day details */}
@@ -238,4 +308,16 @@ const styles = StyleSheet.create({
   eventCow: { fontSize: 13, fontWeight: '700', color: '#555', minWidth: 44 },
   eventTitle: { fontSize: 14, color: '#333', flex: 1 },
   eventDate: { fontSize: 12, color: '#888' },
+
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  summaryItem: { width: '50%', paddingVertical: 8, paddingRight: 8 },
+  summaryLabel: { fontSize: 12, color: '#666', marginBottom: 2 },
+  summaryValue: { fontSize: 20, fontWeight: 'bold' },
+  summarySub: { fontSize: 11, color: '#999', marginTop: 1 },
+  chartTitle: { fontSize: 13, fontWeight: '600', color: '#333', marginTop: 12, marginBottom: 8 },
+  chart: { flexDirection: 'row', paddingTop: 4, height: 150 },
+  barCol: { alignItems: 'center', width: 30, justifyContent: 'flex-end' },
+  bar: { width: 14, borderTopLeftRadius: 4, borderTopRightRadius: 4, backgroundColor: '#F57F17' },
+  barValue: { fontSize: 9, color: '#888', marginBottom: 2 },
+  barLabel: { fontSize: 10, color: '#666', marginTop: 4 },
 });

@@ -12,7 +12,7 @@ import PashuAadharScanner from '../components/PashuAadharScanner';
 
 export default function CowFormScreen() {
   const { t } = useTranslation();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const editCow = route.params?.cow;
 
@@ -81,6 +81,25 @@ export default function CowFormScreen() {
       { text: t('cow.takePhoto'), onPress: () => pickPhoto(true) },
       { text: t('cow.choosePhoto'), onPress: () => pickPhoto(false) },
       { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  };
+
+  const handleDelete = () => {
+    if (!editCow) return;
+    Alert.alert(t('cow.deleteCow'), t('cow.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await localCows.delete(editCow.id);
+            navigation.navigate('Main', { screen: 'Cows' });
+          } catch (err: any) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      },
     ]);
   };
 
@@ -197,7 +216,7 @@ export default function CowFormScreen() {
 
       <Text style={styles.label}>{t('cow.status')}</Text>
       <View style={styles.statusRow}>
-        {['Active', 'Inactive', 'Dry', 'Sold', 'Deceased'].map((s) => (
+        {['Active', 'Milking', 'Dry', 'Sold', 'Deceased'].map((s) => (
           <TouchableOpacity
             key={s}
             style={[styles.statusChip, status === s && styles.statusChipActive]}
@@ -212,6 +231,13 @@ export default function CowFormScreen() {
       <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('common.save')}</Text>}
       </TouchableOpacity>
+
+      {editCow && (
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} disabled={loading}>
+          <MaterialIcons name="delete-outline" size={20} color="#C62828" />
+          <Text style={styles.deleteBtnText}>{t('cow.deleteCow')}</Text>
+        </TouchableOpacity>
+      )}
 
       <PashuAadharScanner
         visible={scannerVisible}
@@ -252,8 +278,14 @@ const styles = StyleSheet.create({
   },
   lookupBtnText: { color: '#1565C0', fontSize: 14, fontWeight: '600' },
   button: {
-    backgroundColor: '#2E7D32', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24, marginBottom: 48,
+    backgroundColor: '#2E7D32', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24,
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  deleteBtn: {
+    flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center',
+    borderRadius: 12, padding: 14, marginTop: 12, marginBottom: 48,
+    borderWidth: 1, borderColor: '#EF9A9A', backgroundColor: '#FFEBEE',
+  },
+  deleteBtnText: { color: '#C62828', fontSize: 16, fontWeight: '600' },
 });

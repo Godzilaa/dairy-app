@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { localCows } from '../services/database';
@@ -86,6 +86,7 @@ export default function CowsScreen() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Active': return '#2E7D32';
+      case 'Milking': return '#00897B';
       case 'Inactive': return '#9E9E9E';
       case 'Dry': return '#F57F17';
       case 'Sold': return '#C62828';
@@ -113,7 +114,7 @@ export default function CowsScreen() {
   return (
     <View style={styles.container}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <MaterialIcons name="pets" size={24} color="#2E7D32" />
+        <MaterialCommunityIcons name="cow" size={24} color="#2E7D32" />
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('cow.title')}</Text>
       </View>
       <View style={styles.searchRow}>

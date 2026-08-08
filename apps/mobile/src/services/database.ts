@@ -213,12 +213,14 @@ export const localCows = {
     await db.runAsync('DELETE FROM cows WHERE id = ?', [id]);
   },
 
-  getStats: async (): Promise<{ totalCows: number; activeCows: number }> => {
-    const row = await db.getFirstAsync<{ total: number; active: number }>(
-      'SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active FROM cows',
-      ['Active']
+  getStats: async (): Promise<{ totalCows: number; activeCows: number; milkingCows: number }> => {
+    const row = await db.getFirstAsync<{ total: number; active: number; milking: number }>(
+      `SELECT COUNT(*) as total,
+              SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) as active,
+              SUM(CASE WHEN status = 'Milking' THEN 1 ELSE 0 END) as milking
+       FROM cows`
     );
-    return { totalCows: row?.total || 0, activeCows: row?.active || 0 };
+    return { totalCows: row?.total || 0, activeCows: row?.active || 0, milkingCows: row?.milking || 0 };
   },
 };
 
@@ -291,6 +293,18 @@ export const localMilk = {
       [today]
     );
     return row?.total || 0;
+  },
+
+  // Per-day milk totals for a given month (0-indexed month), oldest first.
+  getMonthDaily: async (year: number, month: number): Promise<{ date: string; total: number }[]> => {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    return db.getAllAsync<{ date: string; total: number }>(
+      `SELECT milkingDate as date,
+              COALESCE(SUM(morningMilk),0) + COALESCE(SUM(eveningMilk),0) as total
+       FROM milk_feed WHERE milkingDate LIKE ?
+       GROUP BY milkingDate ORDER BY milkingDate ASC`,
+      [`${prefix}%`]
+    );
   },
 
   create: async (data: any): Promise<any> => {

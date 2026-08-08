@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { localCows } from '../services/database';
@@ -26,7 +26,7 @@ export default function CowDetailScreen() {
           <Image source={{ uri: cow.photo }} style={styles.photo} />
         ) : (
           <View style={styles.photoPlaceholder}>
-            <MaterialIcons name="pets" size={44} color="#A5D6A7" />
+            <MaterialCommunityIcons name="cow" size={44} color="#A5D6A7" />
           </View>
         )}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>

@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,9 +38,12 @@ function MainTabs() {
         headerTintColor: '#fff',
         tabBarActiveTintColor: '#2E7D32',
         tabBarInactiveTintColor: '#999',
-        tabBarIcon: ({ color, size }) => (
-          <MaterialIcons name={TAB_ICONS[route.name]} size={size} color={color} />
-        ),
+        tabBarIcon: ({ color, size }) =>
+          route.name === 'Cows' ? (
+            <MaterialCommunityIcons name="cow" size={size} color={color} />
+          ) : (
+            <MaterialIcons name={TAB_ICONS[route.name]} size={size} color={color} />
+          ),
       })}>
       <Tab.Screen
         name="Dashboard"

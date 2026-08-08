@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput, Alert, Image,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { localCalves } from '../services/database';
@@ -79,7 +79,7 @@ export default function CalvesScreen() {
       {item.photo ? (
         <Image source={{ uri: item.photo }} style={styles.thumb} />
       ) : (
-        <View style={styles.thumbPlaceholder}><MaterialIcons name="pets" size={28} color="#A5D6A7" /></View>
+        <View style={styles.thumbPlaceholder}><MaterialCommunityIcons name="cow" size={28} color="#A5D6A7" /></View>
       )}
       <View style={{ flex: 1 }}>
         <Text style={styles.name}>{item.name}</Text>
