@@ -1,0 +1,8 @@
+project_id = "olvazkyvzyosjbzlbkjk"
+
+[auth]
+enabled = true
+
+[auth.third_party.clerk]
+enabled = true
+domain = "stirred-midge-25.clerk.accounts.dev"

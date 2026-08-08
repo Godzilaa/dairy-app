@@ -4,6 +4,7 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { localCows } from '../services/database';
+import { formatDate } from '../utils/date';
 
 export default function CowDetailScreen() {
   const { t } = useTranslation();
@@ -30,7 +31,7 @@ export default function CowDetailScreen() {
           </View>
         )}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
-          <MaterialIcons name="info-outline" size={24} color="#2E7D32" />
+          <MaterialIcons name="info-outline" size={24} color="#1B5E20" />
           <Text style={styles.cowId}>{cow.cowId}</Text>
         </View>
         <Text style={styles.name}>{cow.name}</Text>
@@ -40,10 +41,9 @@ export default function CowDetailScreen() {
         <InfoRow label={t('cow.breed')} value={cow.breed} />
         <InfoRow label={t('cow.status')} value={cow.status} />
         <InfoRow label={t('cow.pashuAadhar')} value={cow.pashuAadhar || '-'} />
-        <InfoRow label={t('cow.dob')} value={cow.dob || '-'} />
+        <InfoRow label={t('cow.dob')} value={formatDate(cow.dob) || '-'} />
         <InfoRow label={t('cow.mother')} value={cow.mother || '-'} />
         <InfoRow label={t('cow.father')} value={cow.father || '-'} />
-        <InfoRow label={t('cow.registrationMethod')} value={cow.registrationMethod || '-'} />
       </View>
 
       <View style={styles.actions}>
@@ -80,7 +80,7 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
   header: { alignItems: 'center', marginBottom: 24 },
-  photo: { width: 110, height: 110, borderRadius: 55, borderWidth: 2, borderColor: '#2E7D32' },
+  photo: { width: 110, height: 110, borderRadius: 55, borderWidth: 2, borderColor: '#1B5E20' },
   photoPlaceholder: {
     width: 110, height: 110, borderRadius: 55, backgroundColor: '#E8F5E9',
     alignItems: 'center', justifyContent: 'center',
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   actionBtn: {
     backgroundColor: '#E8F5E9', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20,
   },
-  actionText: { color: '#2E7D32', fontWeight: '600', fontSize: 14 },
+  actionText: { color: '#1B5E20', fontWeight: '600', fontSize: 14 },
   editBtn: { backgroundColor: '#1565C0', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32 },
   editBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

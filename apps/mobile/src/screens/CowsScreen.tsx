@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl,
+  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl, Image,
 } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ interface Cow {
   breed: string;
   status: string;
   pashuAadhar?: string;
+  photo?: string;
 }
 
 export default function CowsScreen() {
@@ -85,7 +86,7 @@ export default function CowsScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Active': return '#2E7D32';
+      case 'Active': return '#1B5E20';
       case 'Milking': return '#00897B';
       case 'Inactive': return '#9E9E9E';
       case 'Dry': return '#F57F17';
@@ -99,22 +100,31 @@ export default function CowsScreen() {
     <TouchableOpacity
       style={styles.cowCard}
       onPress={() => navigation.navigate('CowDetail', { cowId: item.id })}>
-      <View style={styles.cowHeader}>
-        <Text style={styles.cowId}>{item.cowId}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
+      {item.photo ? (
+        <Image source={{ uri: item.photo }} style={styles.avatar} />
+      ) : (
+        <View style={styles.avatarPlaceholder}>
+          <MaterialCommunityIcons name="cow" size={30} color="#A5D6A7" />
         </View>
+      )}
+      <View style={styles.cowInfo}>
+        <View style={styles.cowHeader}>
+          <Text style={styles.cowId}>{item.cowId}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{item.status}</Text>
+          </View>
+        </View>
+        <Text style={styles.cowName}>{item.name}</Text>
+        <Text style={styles.cowBreed}>{item.breed}</Text>
+        {item.pashuAadhar ? <Text style={styles.cowTag}>Tag: {item.pashuAadhar}</Text> : null}
       </View>
-      <Text style={styles.cowName}>{item.name}</Text>
-      <Text style={styles.cowBreed}>{item.breed}</Text>
-      {item.pashuAadhar && <Text style={styles.cowTag}>Tag: {item.pashuAadhar}</Text>}
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <MaterialCommunityIcons name="cow" size={24} color="#2E7D32" />
+        <MaterialCommunityIcons name="cow" size={24} color="#1B5E20" />
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('cow.title')}</Text>
       </View>
       <View style={styles.searchRow}>
@@ -134,9 +144,22 @@ export default function CowsScreen() {
         data={cows}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 96, flexGrow: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
-          <Text style={styles.empty}>{t('common.noData')}</Text>
+          <View style={styles.emptyWrap}>
+            <MaterialCommunityIcons name="cow" size={64} color="#C8E6C9" />
+            <Text style={styles.emptyTitle}>{search ? t('common.noData') : t('cow.emptyTitle')}</Text>
+            {!search && (
+              <>
+                <Text style={styles.emptySub}>{t('cow.emptySub')}</Text>
+                <TouchableOpacity style={styles.emptyBtn} onPress={() => navigation.navigate('CowForm', {})}>
+                  <MaterialIcons name="add" size={18} color="#fff" />
+                  <Text style={styles.emptyBtnText}>{t('cow.addFirst')}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         }
       />
       <TouchableOpacity
@@ -169,12 +192,21 @@ const styles = StyleSheet.create({
   },
   scanIconText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   cowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     marginBottom: 12,
     elevation: 2,
   },
+  avatar: { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#1B5E20' },
+  avatarPlaceholder: {
+    width: 64, height: 64, borderRadius: 32, backgroundColor: '#E8F5E9',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#A5D6A7',
+  },
+  cowInfo: { flex: 1 },
   cowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   cowId: { fontSize: 14, fontWeight: '600', color: '#666' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
@@ -183,10 +215,15 @@ const styles = StyleSheet.create({
   cowBreed: { fontSize: 14, color: '#666', marginTop: 2 },
   cowTag: { fontSize: 12, color: '#999', marginTop: 4 },
   empty: { textAlign: 'center', marginTop: 48, color: '#999', fontSize: 16 },
+  emptyWrap: { alignItems: 'center', marginTop: 64, paddingHorizontal: 24 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#555', marginTop: 12 },
+  emptySub: { fontSize: 14, color: '#999', textAlign: 'center', marginTop: 6 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#1B5E20', borderRadius: 24, paddingHorizontal: 20, paddingVertical: 12, marginTop: 16 },
+  emptyBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   fab: {
     position: 'absolute', right: 20, bottom: 20,
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#2E7D32', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#1B5E20', justifyContent: 'center', alignItems: 'center',
     elevation: 6,
   },
   fabText: { color: '#fff', fontSize: 28, lineHeight: 30 },

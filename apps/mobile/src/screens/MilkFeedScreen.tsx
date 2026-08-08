@@ -3,6 +3,10 @@ import { View, Text, FlatList, TextInput, StyleSheet, TouchableOpacity, Modal, S
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localMilk } from '../services/database';
+import DateField from '../components/DateField';
+import CowAccordion from '../components/CowAccordion';
+import CowPicker from '../components/CowPicker';
+import { formatDate } from '../utils/date';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -102,12 +106,12 @@ export default function MilkFeedScreen() {
     );
   };
 
-  const renderItem = ({ item }: { item: any }) => (
+  const renderCard = (item: any) => (
     <TouchableOpacity style={styles.card} onPress={() => openEdit(item)}>
       <View style={styles.cardHeader}>
         <Text style={styles.cowId}>{item.cowId}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={styles.date}>{item.milkingDate}</Text>
+          <Text style={styles.date}>{formatDate(item.milkingDate)}</Text>
           <MaterialIcons name="edit" size={15} color="#bbb" />
         </View>
       </View>
@@ -126,7 +130,7 @@ export default function MilkFeedScreen() {
     <View style={styles.container}>
       <View style={styles.totalCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <MaterialIcons name="local-drink" size={24} color="#2E7D32" />
+          <MaterialIcons name="local-drink" size={24} color="#1B5E20" />
           <Text style={styles.totalLabel}>{t('dashboard.todayMilk')}</Text>
         </View>
         <Text style={styles.totalValue}>{todayTotal.toFixed(1)} L</Text>
@@ -137,12 +141,14 @@ export default function MilkFeedScreen() {
         value={cowId}
         onChangeText={setCowId}
       />
-      <FlatList
-        data={records}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
-      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 96 }} showsVerticalScrollIndicator={false}>
+        <CowAccordion
+          records={records}
+          renderItem={renderCard}
+          emptyText={t('common.noData')}
+          summary={(items) => `${items.reduce((s, m) => s + (m.morningMilk || 0) + (m.eveningMilk || 0), 0).toFixed(1)} L`}
+        />
+      </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={openAdd}>
         <MaterialIcons name="add" size={28} color="#fff" />
@@ -154,10 +160,10 @@ export default function MilkFeedScreen() {
             <Text style={styles.modalTitle}>{editingId ? t('milk.editRecord') : t('milk.addRecord')}</Text>
             <ScrollView>
               <Text style={styles.label}>{t('cow.cowId')} *</Text>
-              <TextInput style={styles.modalInput} value={fCowId} onChangeText={setFCowId} placeholder="C001" autoCapitalize="characters" editable={!editingId} />
+              <CowPicker value={fCowId} onChange={setFCowId} style={styles.modalInput} disabled={!!editingId} />
 
               <Text style={styles.label}>{t('milk.date')}</Text>
-              <TextInput style={styles.modalInput} value={fDate} onChangeText={setFDate} placeholder="YYYY-MM-DD" />
+              <DateField value={fDate} onChange={setFDate} style={styles.modalInput} />
 
               <Text style={styles.label}>{t('milk.morningMilk')}</Text>
               <TextInput style={styles.modalInput} value={fMorning} onChangeText={setFMorning} keyboardType="decimal-pad" placeholder="0.0" />
@@ -211,7 +217,7 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center', marginTop: 48, color: '#999' },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#2E7D32', alignItems: 'center', justifyContent: 'center', elevation: 4,
+    backgroundColor: '#1B5E20', alignItems: 'center', justifyContent: 'center', elevation: 4,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
@@ -221,7 +227,7 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
   cancelText: { color: '#666', fontWeight: '600' },
-  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#2E7D32', alignItems: 'center' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#1B5E20', alignItems: 'center' },
   saveText: { color: '#fff', fontWeight: '600' },
   deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   deleteText: { color: '#C62828', fontWeight: '600' },

@@ -6,6 +6,7 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 
+import SyncChip from '../components/SyncChip';
 import LoginScreen from '../screens/LoginScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import CowsScreen from '../screens/CowsScreen';
@@ -16,6 +17,8 @@ import MilkFeedScreen from '../screens/MilkFeedScreen';
 import HeatTrackingScreen from '../screens/HeatTrackingScreen';
 import CalvesScreen from '../screens/CalvesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import RemindersScreen from '../screens/RemindersScreen';
+import MilkChartScreen from '../screens/MilkChartScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -25,6 +28,7 @@ const TAB_ICONS: Record<string, keyof typeof MaterialIcons.glyphMap> = {
   Cows: 'pets',
   Health: 'local-hospital',
   MilkFeed: 'local-drink',
+  Reminders: 'notifications-active',
   Settings: 'settings',
 };
 
@@ -34,13 +38,18 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: '#2E7D32' },
+        headerStyle: { backgroundColor: '#1B5E20' },
         headerTintColor: '#fff',
-        tabBarActiveTintColor: '#2E7D32',
+        headerRight: () => <SyncChip />,
+        tabBarActiveTintColor: '#1B5E20',
         tabBarInactiveTintColor: '#999',
         tabBarIcon: ({ color, size }) =>
           route.name === 'Cows' ? (
+            // Front cow face — closest built-in glyph to a Gir cow.
             <MaterialCommunityIcons name="cow" size={size} color={color} />
+          ) : route.name === 'MilkFeed' ? (
+            // Milk in a cup with a drop — closest built-in to "udder dropping milk".
+            <MaterialCommunityIcons name="cup-water" size={size} color={color} />
           ) : (
             <MaterialIcons name={TAB_ICONS[route.name]} size={size} color={color} />
           ),
@@ -66,6 +75,11 @@ function MainTabs() {
         options={{ title: t('milk.title'), tabBarLabel: t('milk.title') }}
       />
       <Tab.Screen
+        name="Reminders"
+        component={RemindersScreen}
+        options={{ title: t('reminders.title'), tabBarLabel: t('reminders.title') }}
+      />
+      <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{ title: t('settings.title'), tabBarLabel: t('settings.title') }}
@@ -83,7 +97,7 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: '#2E7D32' },
+          headerStyle: { backgroundColor: '#1B5E20' },
           headerTintColor: '#fff',
         }}>
         {!isAuthenticated ? (
@@ -118,6 +132,11 @@ export default function AppNavigator() {
               name="Calves"
               component={CalvesScreen}
               options={{ title: 'Calves & Bloodline' }}
+            />
+            <Stack.Screen
+              name="MilkChart"
+              component={MilkChartScreen}
+              options={{ title: 'Milk Line Graph' }}
             />
           </>
         )}

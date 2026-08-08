@@ -117,6 +117,6 @@ const styles = StyleSheet.create({
   cancelText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   rescanBtn: { backgroundColor: '#1565C0', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 10 },
   rescanText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  closeBtn: { backgroundColor: '#2E7D32', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 10 },
+  closeBtn: { backgroundColor: '#1B5E20', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 10 },
   closeBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

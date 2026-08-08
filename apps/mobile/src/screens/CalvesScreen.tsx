@@ -95,7 +95,7 @@ export default function CalvesScreen() {
   return (
     <View style={styles.container}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <MaterialIcons name="toys" size={24} color="#2E7D32" />
+        <MaterialIcons name="toys" size={24} color="#1B5E20" />
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('calves.title')}</Text>
       </View>
       <FlatList
@@ -119,7 +119,7 @@ export default function CalvesScreen() {
                   <Image source={{ uri: photo }} style={styles.photo} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <MaterialIcons name="add-a-photo" size={32} color="#2E7D32" />
+                    <MaterialIcons name="add-a-photo" size={32} color="#1B5E20" />
                     <Text style={styles.photoHint}>{t('cow.addPhoto')}</Text>
                   </View>
                 )}
@@ -167,35 +167,35 @@ export default function CalvesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
   card: { flexDirection: 'row', gap: 12, backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 10, elevation: 1 },
-  thumb: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, borderColor: '#2E7D32' },
+  thumb: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, borderColor: '#1B5E20' },
   thumbPlaceholder: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center' },
   name: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 4 },
   detail: { fontSize: 14, color: '#555', marginTop: 2 },
   empty: { textAlign: 'center', marginTop: 48, color: '#999' },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#2E7D32', alignItems: 'center', justifyContent: 'center', elevation: 4,
+    backgroundColor: '#1B5E20', alignItems: 'center', justifyContent: 'center', elevation: 4,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
   photoPicker: { alignSelf: 'center', marginBottom: 8 },
-  photo: { width: 100, height: 100, borderRadius: 50, borderWidth: 2, borderColor: '#2E7D32' },
+  photo: { width: 100, height: 100, borderRadius: 50, borderWidth: 2, borderColor: '#1B5E20' },
   photoPlaceholder: {
     width: 100, height: 100, borderRadius: 50, backgroundColor: '#E8F5E9',
     alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#A5D6A7', borderStyle: 'dashed',
   },
-  photoHint: { fontSize: 11, color: '#2E7D32', marginTop: 2 },
+  photoHint: { fontSize: 11, color: '#1B5E20', marginTop: 2 },
   label: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4, marginTop: 10 },
   modalInput: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#E0E0E0' },
   chips: { flexDirection: 'row', gap: 8 },
   chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18, backgroundColor: '#EEEEEE' },
-  chipActive: { backgroundColor: '#2E7D32' },
+  chipActive: { backgroundColor: '#1B5E20' },
   chipText: { fontSize: 13, color: '#555' },
   chipTextActive: { color: '#fff', fontWeight: '600' },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
   cancelText: { color: '#666', fontWeight: '600' },
-  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#2E7D32', alignItems: 'center' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#1B5E20', alignItems: 'center' },
   saveText: { color: '#fff', fontWeight: '600' },
 });

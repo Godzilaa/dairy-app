@@ -5,7 +5,10 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useRoute } from '@react-navigation/native';
-import { localHeat } from '../services/database';
+import { localHeat, expectedDueDate } from '../services/database';
+import DateField from '../components/DateField';
+import CowPicker from '../components/CowPicker';
+import { formatDate } from '../utils/date';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -23,6 +26,7 @@ export default function HeatTrackingScreen() {
   const [cowId, setCowId] = useState(route.params?.cowId || '');
   const [records, setRecords] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [fHeat, setFHeat] = useState(today());
   const [fConception, setFConception] = useState('');
@@ -43,20 +47,34 @@ export default function HeatTrackingScreen() {
     if (fConception) setFRepeat(addDays(fConception, 15));
   }, [fConception]);
 
-  const resetForm = () => { setFHeat(today()); setFConception(''); setFRepeat(''); setFNotes(''); };
+  const resetForm = () => { setEditingId(null); setFHeat(today()); setFConception(''); setFRepeat(''); setFNotes(''); };
+
+  const openAdd = () => { resetForm(); setModalVisible(true); };
+
+  const openEdit = (r: any) => {
+    setEditingId(r.id);
+    if (r.cowId) setCowId(r.cowId);
+    setFHeat(r.heatIdentificationDate || today());
+    setFConception(r.conceptionDate || '');
+    setFRepeat(r.repeatHeatDate || '');
+    setFNotes(r.notes || '');
+    setModalVisible(true);
+  };
 
   const handleSave = async () => {
     if (!cowId.trim()) { Alert.alert('Error', 'Enter a Cow ID first'); return; }
     if (!fHeat.trim()) { Alert.alert('Error', 'Heat identification date is required'); return; }
     setSaving(true);
     try {
-      await localHeat.create({
+      const payload = {
         cowId: cowId.trim(),
         heatIdentificationDate: fHeat,
         conceptionDate: fConception || undefined,
         repeatHeatDate: fRepeat || undefined,
         notes: fNotes || undefined,
-      });
+      };
+      if (editingId) await localHeat.update(editingId, payload);
+      else await localHeat.create(payload);
       setModalVisible(false);
       resetForm();
       await loadRecords();
@@ -65,6 +83,27 @@ export default function HeatTrackingScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (!editingId) return;
+    Alert.alert(t('common.delete'), 'Delete this heat record?', [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await localHeat.delete(editingId);
+            setModalVisible(false);
+            resetForm();
+            await loadRecords();
+          } catch (err: any) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -88,6 +127,7 @@ export default function HeatTrackingScreen() {
           <View style={[styles.row, styles.headerRow]}>
             <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.heatIdentification')}</Text>
             <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.conception')}</Text>
+            <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.expectedDueDate')}</Text>
             <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.repeatHeatDate')}</Text>
             <Text style={[styles.cell, styles.headerCell, styles.colNotes]}>{t('heat.notes')}</Text>
           </View>
@@ -96,38 +136,48 @@ export default function HeatTrackingScreen() {
               <Text style={styles.empty}>{t('common.noData')}</Text>
             ) : (
               records.map((r, i) => (
-                <View key={i} style={[styles.row, i % 2 === 1 && styles.rowAlt]}>
-                  <Text style={[styles.cell, styles.colDate]}>{r.heatIdentificationDate || '-'}</Text>
-                  <Text style={[styles.cell, styles.colDate]}>{r.conceptionDate || '-'}</Text>
-                  <Text style={[styles.cell, styles.colDate]}>{r.repeatHeatDate || '-'}</Text>
-                  <Text style={[styles.cell, styles.colNotes]}>{r.notes || '-'}</Text>
-                </View>
+                <TouchableOpacity key={r.id || i} style={[styles.row, i % 2 === 1 && styles.rowAlt]} onPress={() => openEdit(r)}>
+                  <Text style={[styles.cell, styles.colDate]}>{formatDate(r.heatIdentificationDate) || '-'}</Text>
+                  <Text style={[styles.cell, styles.colDate]}>{formatDate(r.conceptionDate) || '-'}</Text>
+                  <Text style={[styles.cell, styles.colDate, styles.dueCell]}>{formatDate(expectedDueDate(r.conceptionDate)) || '-'}</Text>
+                  <Text style={[styles.cell, styles.colDate]}>{formatDate(r.repeatHeatDate) || '-'}</Text>
+                  <View style={[styles.cell, styles.colNotes, styles.notesCell]}>
+                    <Text style={styles.notesText} numberOfLines={1}>{r.notes || '-'}</Text>
+                    <MaterialIcons name="edit" size={15} color="#bbb" />
+                  </View>
+                </TouchableOpacity>
               ))
             )}
           </ScrollView>
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={() => { resetForm(); setModalVisible(true); }}>
+      <TouchableOpacity style={styles.fab} onPress={openAdd}>
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('heat.addRecord')}</Text>
+            <Text style={styles.modalTitle}>{editingId ? t('heat.editRecord') : t('heat.addRecord')}</Text>
             <ScrollView>
               <Text style={styles.label}>{t('cow.cowId')} *</Text>
-              <TextInput style={styles.modalInput} value={cowId} onChangeText={setCowId} placeholder="C001" autoCapitalize="characters" />
+              <CowPicker value={cowId} onChange={setCowId} style={styles.modalInput} disabled={!!editingId} />
 
               <Text style={styles.label}>{t('heat.heatIdentification')} *</Text>
-              <TextInput style={styles.modalInput} value={fHeat} onChangeText={setFHeat} placeholder="YYYY-MM-DD" />
+              <DateField value={fHeat} onChange={setFHeat} style={styles.modalInput} />
 
               <Text style={styles.label}>{t('heat.conception')}</Text>
-              <TextInput style={styles.modalInput} value={fConception} onChangeText={setFConception} placeholder="YYYY-MM-DD" />
+              <DateField value={fConception} onChange={setFConception} style={styles.modalInput} />
+
+              <Text style={styles.label}>{t('heat.expectedDueDate')}</Text>
+              <View style={[styles.modalInput, styles.readonlyInput]}>
+                <Text style={styles.readonlyText}>{formatDate(expectedDueDate(fConception)) || '—'}</Text>
+              </View>
+              {fConception ? <Text style={styles.autoHint}>{t('heat.dueAuto')}</Text> : null}
 
               <Text style={styles.label}>{t('heat.repeatHeatDate')}</Text>
-              <TextInput style={styles.modalInput} value={fRepeat} onChangeText={setFRepeat} placeholder="YYYY-MM-DD" />
+              <DateField value={fRepeat} onChange={setFRepeat} style={styles.modalInput} />
               {fConception ? <Text style={styles.autoHint}>{t('heat.repeatAuto')}</Text> : null}
 
               <Text style={styles.label}>{t('heat.notes')}</Text>
@@ -141,6 +191,12 @@ export default function HeatTrackingScreen() {
                 <Text style={styles.saveText}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
+            {editingId && (
+              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+                <MaterialIcons name="delete-outline" size={18} color="#C62828" />
+                <Text style={styles.deleteText}>{t('common.delete')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
@@ -159,7 +215,10 @@ const styles = StyleSheet.create({
   headerCell: { color: '#fff', fontWeight: '700', fontSize: 12 },
   colDate: { width: 130 },
   colNotes: { width: 160 },
-  empty: { textAlign: 'center', marginTop: 40, color: '#999', width: 550 },
+  notesCell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  notesText: { fontSize: 13, color: '#333', flex: 1 },
+  dueCell: { color: '#8D5E34', fontWeight: '600' },
+  empty: { textAlign: 'center', marginTop: 40, color: '#999', width: 680 },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
     backgroundColor: '#C2185B', alignItems: 'center', justifyContent: 'center', elevation: 4,
@@ -169,10 +228,14 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
   label: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4, marginTop: 10 },
   modalInput: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#E0E0E0' },
+  readonlyInput: { backgroundColor: '#EFEAE4', justifyContent: 'center' },
+  readonlyText: { fontSize: 15, color: '#8D5E34', fontWeight: '600' },
   autoHint: { fontSize: 12, color: '#C2185B', marginTop: 4 },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
   cancelText: { color: '#666', fontWeight: '600' },
   saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#C2185B', alignItems: 'center' },
   saveText: { color: '#fff', fontWeight: '600' },
+  deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
+  deleteText: { color: '#C62828', fontWeight: '600' },
 });

@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { localCows } from '../services/database';
 import { lookupPashuAadhar } from '../services/pashuAadharApi';
 import PashuAadharScanner from '../components/PashuAadharScanner';
+import DateField from '../components/DateField';
 
 export default function CowFormScreen() {
   const { t } = useTranslation();
@@ -136,9 +137,9 @@ export default function CowFormScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <MaterialIcons name="add-circle-outline" size={24} color="#2E7D32" />
+        <MaterialIcons name="add-circle-outline" size={24} color="#1B5E20" />
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{editCow ? 'Edit Cow' : 'Register Cow'}</Text>
       </View>
       <TouchableOpacity style={styles.photoPicker} onPress={choosePhoto}>
@@ -146,7 +147,7 @@ export default function CowFormScreen() {
           <Image source={{ uri: photo }} style={styles.photo} />
         ) : (
           <View style={styles.photoPlaceholder}>
-            <MaterialIcons name="add-a-photo" size={36} color="#2E7D32" />
+            <MaterialIcons name="add-a-photo" size={36} color="#1B5E20" />
             <Text style={styles.photoHint}>{t('cow.addPhoto')}</Text>
           </View>
         )}
@@ -203,7 +204,7 @@ export default function CowFormScreen() {
       )}
 
       <Text style={styles.label}>{t('cow.dob')}</Text>
-      <TextInput style={styles.input} value={dob} onChangeText={setDob} placeholder="YYYY-MM-DD" />
+      <DateField value={dob} onChange={setDob} style={styles.input} />
 
       <Text style={styles.label}>{t('cow.mother')}</Text>
       <TextInput style={styles.input} value={mother} onChangeText={setMother} />
@@ -211,12 +212,18 @@ export default function CowFormScreen() {
       <Text style={styles.label}>{t('cow.father')}</Text>
       <TextInput style={styles.input} value={father} onChangeText={setFather} />
 
-      <Text style={styles.label}>{t('cow.registrationMethod')}</Text>
-      <TextInput style={styles.input} value={method} onChangeText={setMethod} placeholder="AI / NATURAL" />
+      {/* Registration method is a create-time field — hidden when editing. */}
+      {!editCow && (
+        <>
+          <Text style={styles.label}>{t('cow.registrationMethod')}</Text>
+          <TextInput style={styles.input} value={method} onChangeText={setMethod} placeholder="AI / NATURAL" />
+        </>
+      )}
 
       <Text style={styles.label}>{t('cow.status')}</Text>
       <View style={styles.statusRow}>
-        {['Active', 'Milking', 'Dry', 'Sold', 'Deceased'].map((s) => (
+        {/* "Active" is dropped in edit mode — use a concrete lifecycle status instead. */}
+        {(editCow ? ['Milking', 'Dry', 'Sold', 'Deceased'] : ['Active', 'Milking', 'Dry', 'Sold', 'Deceased']).map((s) => (
           <TouchableOpacity
             key={s}
             style={[styles.statusChip, status === s && styles.statusChipActive]}
@@ -255,16 +262,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#E0E0E0',
   },
   photoPicker: { alignSelf: 'center', marginBottom: 8 },
-  photo: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#2E7D32' },
+  photo: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#1B5E20' },
   photoPlaceholder: {
     width: 120, height: 120, borderRadius: 60, backgroundColor: '#E8F5E9',
     alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#A5D6A7', borderStyle: 'dashed',
   },
-  photoHint: { fontSize: 11, color: '#2E7D32', marginTop: 4 },
+  photoHint: { fontSize: 11, color: '#1B5E20', marginTop: 4 },
   changePhoto: { textAlign: 'center', color: '#1565C0', fontSize: 13, marginBottom: 8, fontWeight: '600' },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   statusChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#EEEEEE' },
-  statusChipActive: { backgroundColor: '#2E7D32' },
+  statusChipActive: { backgroundColor: '#1B5E20' },
   statusChipText: { fontSize: 13, color: '#555' },
   statusChipTextActive: { color: '#fff', fontWeight: '600' },
   tagRow: { flexDirection: 'row', gap: 10 },
@@ -278,7 +285,7 @@ const styles = StyleSheet.create({
   },
   lookupBtnText: { color: '#1565C0', fontSize: 14, fontWeight: '600' },
   button: {
-    backgroundColor: '#2E7D32', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24,
+    backgroundColor: '#1B5E20', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24,
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },

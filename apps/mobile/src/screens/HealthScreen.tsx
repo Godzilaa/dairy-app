@@ -5,6 +5,10 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localHealth, localVaccines } from '../services/database';
+import DateField from '../components/DateField';
+import CowAccordion from '../components/CowAccordion';
+import CowPicker from '../components/CowPicker';
+import { formatDate } from '../utils/date';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -144,7 +148,32 @@ export default function HealthScreen() {
     }
   };
 
-  const renderItem = ({ item }: { item: any }) => {
+  const handleDelete = () => {
+    if (!editingId) return;
+    Alert.alert(
+      t('common.delete'),
+      'Delete this health record?',
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await localHealth.delete(editingId);
+              setModalVisible(false);
+              resetForm();
+              await loadRecords();
+            } catch (err: any) {
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const renderCard = (item: any) => {
     const isTreatment = item.recordType === 'treatment';
     return (
       <TouchableOpacity style={[styles.card, isTreatment && styles.treatmentCard]} onPress={() => openEdit(item)}>
@@ -159,8 +188,8 @@ export default function HealthScreen() {
         </View>
         <Text style={styles.type}>{isTreatment ? item.medicineName : item.vaccinationType}</Text>
         <Text style={styles.date}>
-          {item.date ? `${t('health.date')}: ${item.date}` : t('health.notAdministered')}
-          {item.nextDueDate ? ` | ${t('health.nextDueDate')}: ${item.nextDueDate}` : ''}
+          {item.date ? `${t('health.date')}: ${formatDate(item.date)}` : t('health.notAdministered')}
+          {item.nextDueDate ? ` | ${t('health.nextDueDate')}: ${formatDate(item.nextDueDate)}` : ''}
         </Text>
         {isTreatment && item.treatmentMode ? <Text style={styles.sub}>{t('health.treatmentMode')}: {item.treatmentMode}</Text> : null}
         {isTreatment && item.treatmentPeriod ? <Text style={styles.sub}>{t('health.treatmentPeriod')}: {item.treatmentPeriod}</Text> : null}
@@ -173,7 +202,7 @@ export default function HealthScreen() {
   return (
     <View style={styles.container}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <MaterialIcons name="local-hospital" size={24} color="#2E7D32" />
+        <MaterialIcons name="local-hospital" size={24} color="#1B5E20" />
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('health.title')}</Text>
       </View>
       <View style={styles.filters}>
@@ -201,12 +230,9 @@ export default function HealthScreen() {
           onChangeText={setCowId}
         />
       )}
-      <FlatList
-        data={records}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
-      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 96 }} showsVerticalScrollIndicator={false}>
+        <CowAccordion records={records} renderItem={renderCard} emptyText={t('common.noData')} />
+      </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={openModal}>
         <MaterialIcons name="add" size={28} color="#fff" />
@@ -235,7 +261,7 @@ export default function HealthScreen() {
 
             <ScrollView>
               <Text style={styles.label}>{t('cow.cowId')} *</Text>
-              <TextInput style={styles.modalInput} value={fCowId} onChangeText={setFCowId} placeholder="C001" autoCapitalize="characters" editable={!editingId} />
+              <CowPicker value={fCowId} onChange={setFCowId} style={styles.modalInput} disabled={!!editingId} />
 
               {mode === 'vaccination' ? (
                 <>
@@ -259,10 +285,10 @@ export default function HealthScreen() {
                   />
 
                   <Text style={styles.label}>{t('health.date')}</Text>
-                  <TextInput style={styles.modalInput} value={fDate} onChangeText={setFDate} placeholder="YYYY-MM-DD" />
+                  <DateField value={fDate} onChange={setFDate} style={styles.modalInput} />
 
                   <Text style={styles.label}>{t('health.nextDueDate')}</Text>
-                  <TextInput style={styles.modalInput} value={fNextDue} onChangeText={setFNextDue} placeholder="YYYY-MM-DD" />
+                  <DateField value={fNextDue} onChange={setFNextDue} style={styles.modalInput} />
                   {fVaccine === 'Deworming' && (
                     <Text style={styles.autoHint}>{t('health.dewormingAuto')}</Text>
                   )}
@@ -282,7 +308,7 @@ export default function HealthScreen() {
                   <TextInput style={[styles.modalInput, { height: 70 }]} value={fMedicinesGiven} onChangeText={setFMedicinesGiven} placeholder="Medicines administered" multiline />
 
                   <Text style={styles.label}>{t('health.date')}</Text>
-                  <TextInput style={styles.modalInput} value={fDate} onChangeText={setFDate} placeholder="YYYY-MM-DD" />
+                  <DateField value={fDate} onChange={setFDate} style={styles.modalInput} />
                 </>
               )}
 
@@ -298,6 +324,12 @@ export default function HealthScreen() {
                 <Text style={styles.saveText}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
+            {editingId && (
+              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+                <MaterialIcons name="delete-outline" size={18} color="#C62828" />
+                <Text style={styles.deleteText}>{t('common.delete')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
@@ -309,7 +341,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
   filters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#E0E0E0' },
-  filterActive: { backgroundColor: '#2E7D32' },
+  filterActive: { backgroundColor: '#1B5E20' },
   filterText: { fontSize: 13, color: '#666' },
   filterTextActive: { color: '#fff' },
   input: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 12, borderWidth: 1, borderColor: '#E0E0E0' },
@@ -328,27 +360,29 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center', marginTop: 48, color: '#999' },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#2E7D32', alignItems: 'center', justifyContent: 'center', elevation: 4,
+    backgroundColor: '#1B5E20', alignItems: 'center', justifyContent: 'center', elevation: 4,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
   modeTabs: { flexDirection: 'row', borderRadius: 10, overflow: 'hidden', backgroundColor: '#E0E0E0', marginBottom: 8 },
   modeTab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
-  modeTabActive: { backgroundColor: '#2E7D32' },
+  modeTabActive: { backgroundColor: '#1B5E20' },
   modeTabText: { fontSize: 14, fontWeight: '600', color: '#666' },
   modeTabTextActive: { color: '#fff' },
   label: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4, marginTop: 10 },
   modalInput: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#E0E0E0' },
-  autoHint: { fontSize: 12, color: '#2E7D32', marginTop: 4 },
+  autoHint: { fontSize: 12, color: '#1B5E20', marginTop: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#EEEEEE' },
-  chipActive: { backgroundColor: '#2E7D32' },
+  chipActive: { backgroundColor: '#1B5E20' },
   chipText: { fontSize: 13, color: '#555' },
   chipTextActive: { color: '#fff', fontWeight: '600' },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
   cancelText: { color: '#666', fontWeight: '600' },
-  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#2E7D32', alignItems: 'center' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#1B5E20', alignItems: 'center' },
   saveText: { color: '#fff', fontWeight: '600' },
+  deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
+  deleteText: { color: '#C62828', fontWeight: '600' },
 });

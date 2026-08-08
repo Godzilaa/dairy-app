@@ -1,22 +1,44 @@
 module.exports = {
   expo: {
-    name: 'Dairy Manager',
+    name: 'Gopala',
     slug: 'dairy-management',
+    scheme: 'gopala',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
-    splash: { backgroundColor: '#2E7D32' },
+    splash: {
+      image: './assets/splash.png',
+      resizeMode: 'contain',
+      backgroundColor: '#1B5E20',
+    },
     assetBundlePatterns: ['**/*'],
     android: {
       package: 'com.pratik1789.dairymanagement',
-      adaptiveIcon: { backgroundColor: '#2E7D32' },
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundColor: '#1B5E20',
+      },
     },
+    web: { favicon: './assets/favicon.png' },
     plugins: [
       ['expo-camera', { cameraPermission: 'Allow access to scan Pashu Aadhar tags.' }],
       ['expo-image-picker', {
         photosPermission: 'Allow access to add a photo for the cow profile.',
         cameraPermission: 'Allow access to take a photo of the cow.',
+      }],
+      // Resolve duplicate META-INF resources between transitive JARs
+      // (okhttp logging-interceptor vs jspecify) during release packaging.
+      'expo-notifications',
+      'expo-web-browser',
+      ['expo-build-properties', {
+        android: {
+          packagingOptions: {
+            exclude: [
+              'META-INF/versions/9/OSGI-INF/MANIFEST.MF',
+            ],
+          },
+        },
       }],
     ],
     extra: {

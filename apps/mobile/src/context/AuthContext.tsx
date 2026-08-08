@@ -1,5 +1,9 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import { AppState } from 'react-native';
 import { useAuth as useClerkAuth, useUser, useClerk } from '@clerk/expo';
+import { setClerkTokenGetter } from '../services/clerkToken';
+import { syncAll, setSyncOwner } from '../services/cloudSync';
+import { scheduleReminders } from '../services/notifications';
 
 interface User {
   id: string;
@@ -22,7 +26,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { isLoaded, isSignedIn } = useClerkAuth();
+  const { isLoaded, isSignedIn, getToken } = useClerkAuth();
   const { user: clerkUser } = useUser();
   const { signOut } = useClerk();
 
@@ -33,6 +37,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name: clerkUser.fullName ?? clerkUser.username ?? '',
       }
     : null;
+
+  // Give the Supabase client a way to fetch the current Clerk token.
+  useEffect(() => {
+    setClerkTokenGetter(async () => {
+      try { return await getToken(); } catch { return null; }
+    });
+  }, [getToken]);
+
+  // Cloud-sync on sign-in and whenever the app returns to the foreground.
+  const ownerId = clerkUser?.id;
+  useEffect(() => {
+    setSyncOwner(isSignedIn ? ownerId ?? null : null);
+    if (!isSignedIn || !ownerId) return;
+    syncAll(ownerId);
+    scheduleReminders();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') { syncAll(ownerId); scheduleReminders(); }
+    });
+    return () => sub.remove();
+  }, [isSignedIn, ownerId]);
 
   const logout = async () => {
     await signOut();
