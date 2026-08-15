@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIn
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
 import { useAuth } from '../context/AuthContext';
 import { syncAll, lastSyncStatus } from '../services/cloudSync';
 import { isCloudSyncConfigured } from '../services/supabase';
@@ -10,6 +11,8 @@ import { isDriveConfigured } from '../services/googleDrive';
 import DriveBackupSection from '../components/DriveBackupSection';
 import i18n from '../i18n';
 import { COLORS, SHADOWS, RADIUS } from '../theme';
+
+const PRIVACY_POLICY_URL = 'https://godzilaa.github.io/dairy-app/privacy-policy.html';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -92,6 +95,18 @@ export default function SettingsScreen() {
         )}
       </View>
 
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
+        <TouchableOpacity
+          style={styles.linkRow}
+          onPress={() => WebBrowser.openBrowserAsync(PRIVACY_POLICY_URL)}>
+          <MaterialCommunityIcons name="shield-account-outline" size={20} color="#1B5E20" />
+          <Text style={styles.linkText}>{t('settings.privacyPolicy')}</Text>
+          <MaterialCommunityIcons name="open-in-new" size={18} color={COLORS.textMuted} />
+        </TouchableOpacity>
+        <Text style={styles.versionText}>Gopala v{Constants.expoConfig?.version || '1.0.0'}</Text>
+      </View>
+
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <Text style={styles.logoutText}>{t('auth.logout')}</Text>
       </TouchableOpacity>
@@ -114,6 +129,9 @@ const styles = StyleSheet.create({
   driveRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   driveBtn: { flex: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', alignItems: 'center', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#A5D6A7', backgroundColor: '#E8F5E9' },
   driveBtnText: { color: '#1B5E20', fontSize: 13, fontWeight: '600' },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
+  linkText: { flex: 1, fontSize: 15, color: '#1B5E20', fontWeight: '500' },
+  versionText: { fontSize: 12, color: COLORS.textMuted, marginTop: 10 },
   logoutBtn: { backgroundColor: '#fff', borderRadius: RADIUS.lg, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#C62828', marginTop: 8, ...SHADOWS.soft },
   logoutText: { color: '#C62828', fontSize: 16, fontWeight: '600' },
 });

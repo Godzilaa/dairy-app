@@ -238,6 +238,8 @@ export const kn = {
     lastSynced: 'ಕೊನೆಯ ಸಿಂಕ್',
     users: 'ಬಳಕೆದಾರ ನಿರ್ವಹಣೆ',
     profile: 'ಪ್ರೊಫೈಲ್',
+    about: 'ಅಪ್ಲಿಕೇಶನ್ ಬಗ್ಗೆ',
+    privacyPolicy: 'ಗೌಪ್ಯತಾ ನೀತಿ',
   },
   roles: {
     owner: 'ಮಾಲೀಕರು',

@@ -238,6 +238,8 @@ export const hi = {
     lastSynced: 'पिछला सिंक',
     users: 'उपयोगकर्ता प्रबंधन',
     profile: 'प्रोफाइल',
+    about: 'ऐप के बारे में',
+    privacyPolicy: 'गोपनीयता नीति',
   },
   roles: {
     owner: 'मालिक',

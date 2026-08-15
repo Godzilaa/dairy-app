@@ -238,6 +238,8 @@ export const en = {
     lastSynced: 'Last Synced',
     users: 'User Management',
     profile: 'Profile',
+    about: 'About',
+    privacyPolicy: 'Privacy Policy',
   },
   roles: {
     owner: 'Owner',
