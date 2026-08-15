@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { COLORS } from '../theme';
 
 import SyncChip from '../components/SyncChip';
 import LoginScreen from '../screens/LoginScreen';
@@ -16,6 +17,7 @@ import HealthScreen from '../screens/HealthScreen';
 import MilkFeedScreen from '../screens/MilkFeedScreen';
 import HeatTrackingScreen from '../screens/HeatTrackingScreen';
 import CalvesScreen from '../screens/CalvesScreen';
+import BullsScreen from '../screens/BullsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import RemindersScreen from '../screens/RemindersScreen';
 import MilkChartScreen from '../screens/MilkChartScreen';
@@ -38,11 +40,15 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: '#1B5E20' },
-        headerTintColor: '#fff',
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: COLORS.white,
+        headerTitleStyle: { fontWeight: '700' },
+        headerShadowVisible: false,
         headerRight: () => <SyncChip />,
-        tabBarActiveTintColor: '#1B5E20',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarStyle: { backgroundColor: COLORS.surface, borderTopColor: COLORS.border, paddingTop: 4 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarIcon: ({ color, size }) =>
           route.name === 'Cows' ? (
             // Front cow face — closest built-in glyph to a Gir cow.
@@ -97,8 +103,10 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: '#1B5E20' },
-          headerTintColor: '#fff',
+          headerStyle: { backgroundColor: COLORS.primary },
+          headerTintColor: COLORS.white,
+          headerTitleStyle: { fontWeight: '700' },
+          headerShadowVisible: false,
         }}>
         {!isAuthenticated ? (
           <Stack.Screen
@@ -132,6 +140,11 @@ export default function AppNavigator() {
               name="Calves"
               component={CalvesScreen}
               options={{ title: 'Calves & Bloodline' }}
+            />
+            <Stack.Screen
+              name="Bulls"
+              component={BullsScreen}
+              options={{ title: 'Bulls' }}
             />
             <Stack.Screen
               name="MilkChart"

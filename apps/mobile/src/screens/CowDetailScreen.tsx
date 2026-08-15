@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { localCows } from '../services/database';
 import { formatDate } from '../utils/date';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 export default function CowDetailScreen() {
   const { t } = useTranslation();
@@ -78,24 +79,24 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
+  container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
   header: { alignItems: 'center', marginBottom: 24 },
   photo: { width: 110, height: 110, borderRadius: 55, borderWidth: 2, borderColor: '#1B5E20' },
   photoPlaceholder: {
     width: 110, height: 110, borderRadius: 55, backgroundColor: '#E8F5E9',
     alignItems: 'center', justifyContent: 'center',
   },
-  cowId: { fontSize: 14, color: '#666', fontWeight: '600' },
-  name: { fontSize: 28, fontWeight: 'bold', color: '#333', marginTop: 4 },
-  section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, elevation: 2 },
+  cowId: { fontSize: 14, color: COLORS.textSecondary, fontWeight: '600' },
+  name: { fontSize: 28, fontWeight: 'bold', color: COLORS.textPrimary, marginTop: 4 },
+  section: { backgroundColor: '#fff', borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, ...SHADOWS.card, borderWidth: 1, borderColor: COLORS.border },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
-  infoLabel: { fontSize: 14, color: '#666' },
-  infoValue: { fontSize: 14, color: '#333', fontWeight: '500' },
+  infoLabel: { fontSize: 14, color: COLORS.textSecondary },
+  infoValue: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 },
   actionBtn: {
     backgroundColor: '#E8F5E9', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 20,
   },
-  actionText: { color: '#1B5E20', fontWeight: '600', fontSize: 14 },
+  actionText: { color: COLORS.primary, fontWeight: '600', fontSize: 14 },
   editBtn: { backgroundColor: '#1565C0', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 32 },
   editBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

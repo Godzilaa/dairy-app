@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +11,7 @@ import { localCows } from '../services/database';
 import { lookupPashuAadhar } from '../services/pashuAadharApi';
 import PashuAadharScanner from '../components/PashuAadharScanner';
 import DateField from '../components/DateField';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 export default function CowFormScreen() {
   const { t } = useTranslation();
@@ -32,6 +34,8 @@ export default function CowFormScreen() {
   const [lookingUp, setLookingUp] = useState(false);
 
   useEffect(() => {
+    // Promote the specific action to the nav header so it isn't repeated in the body.
+    navigation.setOptions({ title: editCow ? 'Edit Cow' : 'Register Cow' });
     if (!editCow) {
       localCows.getNextId().then((id) => setCowId(id)).catch(() => {});
     }
@@ -137,11 +141,14 @@ export default function CowFormScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <MaterialIcons name="add-circle-outline" size={24} color="#1B5E20" />
-        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{editCow ? 'Edit Cow' : 'Register Cow'}</Text>
-      </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}>
       <TouchableOpacity style={styles.photoPicker} onPress={choosePhoto}>
         {photo ? (
           <Image source={{ uri: photo }} style={styles.photo} />
@@ -203,13 +210,13 @@ export default function CowFormScreen() {
         </TouchableOpacity>
       )}
 
-      <Text style={styles.label}>{t('cow.dob')}</Text>
+      <Text style={styles.label}>{t('cow.dob')} ({t('common.optional')})</Text>
       <DateField value={dob} onChange={setDob} style={styles.input} />
 
-      <Text style={styles.label}>{t('cow.mother')}</Text>
+      <Text style={styles.label}>{t('cow.mother')} ({t('common.optional')})</Text>
       <TextInput style={styles.input} value={mother} onChangeText={setMother} />
 
-      <Text style={styles.label}>{t('cow.father')}</Text>
+      <Text style={styles.label}>{t('cow.father')} ({t('common.optional')})</Text>
       <TextInput style={styles.input} value={father} onChangeText={setFather} />
 
       {/* Registration method is a create-time field — hidden when editing. */}
@@ -251,15 +258,16 @@ export default function CowFormScreen() {
         onScan={handleScan}
         onClose={() => setScannerVisible(false)}
       />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
-  label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6, marginTop: 12 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  label: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 6, marginTop: 12 },
   input: {
-    backgroundColor: '#fff', borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1, borderColor: '#E0E0E0',
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.md, padding: 14, fontSize: 16, borderWidth: 1, borderColor: COLORS.border,
   },
   photoPicker: { alignSelf: 'center', marginBottom: 8 },
   photo: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#1B5E20' },
@@ -285,7 +293,7 @@ const styles = StyleSheet.create({
   },
   lookupBtnText: { color: '#1565C0', fontSize: 14, fontWeight: '600' },
   button: {
-    backgroundColor: '#1B5E20', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24,
+    backgroundColor: COLORS.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24, ...SHADOWS.soft,
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },

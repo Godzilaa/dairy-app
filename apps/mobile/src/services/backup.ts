@@ -2,7 +2,7 @@ import { getDb } from './database';
 
 // Tables included in a full backup snapshot (includes tombstoned rows so a
 // restore is faithful).
-const BACKUP_TABLES = ['cows', 'health_records', 'milk_feed', 'heat_records', 'calves', 'custom_vaccines', 'reminders'];
+const BACKUP_TABLES = ['cows', 'health_records', 'milk_feed', 'heat_records', 'calves', 'bulls', 'custom_vaccines', 'reminders'];
 
 export type BackupFile = {
   app: 'gopala';

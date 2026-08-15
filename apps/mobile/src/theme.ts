@@ -17,15 +17,39 @@ export const COLORS = {
   pink: '#C2185B',          // heat
   red: '#C62828',           // destructive
 
-  // Neutrals
-  bg: '#F6F6F6',            // app background
+  // Neutrals — a warm, faintly green-tinted canvas ("pasture haze") reads far
+  // less clinical than a flat cold grey, and ties the whole app to the brand green.
+  bg: '#F1F5EE',           // app background (warm off-white with a green cast)
   surface: '#FFFFFF',
-  border: '#E0E0E0',
-  textPrimary: '#333333',
-  textSecondary: '#666666',
-  textMuted: '#999999',
+  surfaceAlt: '#F7FAF5',   // inset fields / subtle zebra rows
+  border: '#E4E9DF',       // hairline (green-grey, softer than #E0E0E0)
+  textPrimary: '#26302A',  // near-black with a warm green undertone
+  textSecondary: '#5C6B60',
+  textMuted: '#9BA89E',
   white: '#FFFFFF',
 } as const;
+
+// Soft, green-tinted elevation. Replaces harsh flat `elevation` with a diffuse
+// shadow so cards feel lifted rather than stamped on. Spread onto a style object.
+export const SHADOWS = {
+  card: {
+    shadowColor: '#1C3A22',
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  soft: {
+    shadowColor: '#1C3A22',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+} as const;
+
+// 4-based spacing scale for consistent rhythm.
+export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 
 // Poppins is the brand typeface (SemiBold for headings). Falls back to the
 // system font until the font assets load. Family names match @expo-google-fonts/poppins.
@@ -36,6 +60,6 @@ export const FONTS = {
   bold: 'Poppins_700Bold',
 } as const;
 
-export const RADIUS = { sm: 8, md: 12, lg: 20 } as const;
+export const RADIUS = { sm: 10, md: 14, lg: 20, xl: 24, pill: 999 } as const;
 
 export type Colors = typeof COLORS;

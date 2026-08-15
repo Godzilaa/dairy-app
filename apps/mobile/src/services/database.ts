@@ -100,6 +100,20 @@ const createSchema = async (): Promise<void> => {
     )`
   );
   await db.execAsync(
+    `CREATE TABLE IF NOT EXISTS bulls (
+      id TEXT PRIMARY KEY,
+      cowId TEXT,
+      name TEXT,
+      breed TEXT,
+      mother TEXT,
+      father TEXT,
+      dob TEXT,
+      photo TEXT,
+      createdAt TEXT,
+      updatedAt TEXT
+    )`
+  );
+  await db.execAsync(
     `CREATE TABLE IF NOT EXISTS insurance (
       id TEXT PRIMARY KEY,
       cowId TEXT,
@@ -182,7 +196,7 @@ const addColumn = async (table: string, column: string, type: string): Promise<v
 };
 
 // Tables that sync to the cloud and support soft-delete tombstones.
-const SYNCED_TABLES = ['cows', 'health_records', 'milk_feed', 'heat_records', 'calves', 'reminders'];
+const SYNCED_TABLES = ['cows', 'health_records', 'milk_feed', 'heat_records', 'calves', 'bulls', 'reminders'];
 
 const runMigrations = async (): Promise<void> => {
   await addColumn('health_records', 'recordType', "TEXT DEFAULT 'vaccination'");
@@ -202,6 +216,7 @@ const runMigrations = async (): Promise<void> => {
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_milk_date ON milk_feed(milkingDate)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_heat_cow ON heat_records(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_calves_cow ON calves(cowId)');
+  await db.execAsync('CREATE INDEX IF NOT EXISTS idx_bulls_cow ON bulls(cowId)');
 };
 
 export const getDb = () => db;
@@ -481,6 +496,66 @@ export const expectedDueDate = (conceptionISO?: string | null): string => {
   return d.toISOString().split('T')[0];
 };
 
+export type PregnancyInfo = {
+  isPregnant: boolean;
+  conceptionDate: string;
+  dueDate: string;
+  days: number;    // days since conception
+  weeks: number;   // whole weeks since conception
+  months: number;  // whole months (~30d) since conception
+};
+
+// Derive a cow's current pregnancy from its heat records. A cow counts as
+// pregnant when its most recent conception hasn't yet reached its expected
+// calving date and no newer heat cycle was recorded after that conception
+// (a later heat identification means she returned to heat → service failed).
+export const pregnancyFromRecords = (records: any[]): PregnancyInfo | null => {
+  const conceived = records
+    .filter((r) => r.conceptionDate)
+    .sort((a, b) => (a.conceptionDate < b.conceptionDate ? 1 : -1));
+  if (conceived.length === 0) return null;
+
+  const latest = conceived[0];
+  const conception = new Date(latest.conceptionDate);
+  if (isNaN(conception.getTime())) return null;
+
+  const returnedToHeat = records.some(
+    (r) => r.heatIdentificationDate && r.heatIdentificationDate > latest.conceptionDate
+  );
+
+  const due = expectedDueDate(latest.conceptionDate);
+  const now = Date.now();
+  const days = Math.floor((now - conception.getTime()) / 86400000);
+  const duePassed = due ? new Date(due).getTime() < now : false;
+
+  return {
+    isPregnant: !returnedToHeat && !duePassed && days >= 0,
+    conceptionDate: latest.conceptionDate,
+    dueDate: due,
+    days: Math.max(days, 0),
+    weeks: Math.max(Math.floor(days / 7), 0),
+    months: Math.max(Math.floor(days / 30), 0),
+  };
+};
+
+// Pregnancy status keyed by cowId, computed from all heat records in one pass.
+export const getPregnancyByCow = async (): Promise<Record<string, PregnancyInfo>> => {
+  const rows = await db.getAllAsync<any>(
+    'SELECT cowId, heatIdentificationDate, conceptionDate, repeatHeatDate FROM heat_records WHERE deletedAt IS NULL'
+  );
+  const byCow: Record<string, any[]> = {};
+  for (const r of rows) {
+    if (!r.cowId) continue;
+    (byCow[r.cowId] ||= []).push(r);
+  }
+  const result: Record<string, PregnancyInfo> = {};
+  for (const cowId of Object.keys(byCow)) {
+    const info = pregnancyFromRecords(byCow[cowId]);
+    if (info) result[cowId] = info;
+  }
+  return result;
+};
+
 // Aggregates heat + medication follow-up dates for the dashboard calendar.
 export type CalendarEvent = {
   date: string;        // YYYY-MM-DD
@@ -607,7 +682,20 @@ export const localCalves = {
   getAll: async (): Promise<any[]> =>
     db.getAllAsync('SELECT * FROM calves WHERE deletedAt IS NULL ORDER BY createdAt DESC'),
 
+  count: async (): Promise<number> =>
+    (await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) as n FROM calves WHERE deletedAt IS NULL'))?.n || 0,
+
   create: (data: any) => localCreate('calves', data),
+};
+
+export const localBulls = {
+  getAll: async (): Promise<any[]> =>
+    db.getAllAsync('SELECT * FROM bulls WHERE deletedAt IS NULL ORDER BY createdAt DESC'),
+
+  count: async (): Promise<number> =>
+    (await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) as n FROM bulls WHERE deletedAt IS NULL'))?.n || 0,
+
+  create: (data: any) => localCreate('bulls', data),
 };
 
 export const localInsurance = {

@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { localMilk, localCows } from '../services/database';
 import MilkLineChart, { MilkSeries } from '../components/MilkLineChart';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
@@ -110,18 +111,18 @@ export default function MilkChartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
+  container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   navBtn: { padding: 4 },
-  monthTitle: { fontSize: 17, fontWeight: '700', color: '#333' },
-  axisNote: { fontSize: 12, color: '#999', marginBottom: 12 },
-  chartCard: { backgroundColor: '#fff', borderRadius: 12, padding: 10, elevation: 2 },
-  empty: { textAlign: 'center', color: '#999', marginTop: 48 },
+  monthTitle: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  axisNote: { fontSize: 12, color: COLORS.textMuted, marginBottom: 12 },
+  chartCard: { backgroundColor: '#fff', borderRadius: RADIUS.lg, padding: 10, ...SHADOWS.card, borderWidth: 1, borderColor: COLORS.border },
+  empty: { textAlign: 'center', color: COLORS.textMuted, marginTop: 48 },
   styleKey: { flexDirection: 'row', gap: 20, justifyContent: 'center', marginTop: 12 },
   keyItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   solidLine: { width: 24, height: 0, borderTopWidth: 2, borderColor: '#555' },
   dashedLine: { width: 24, height: 0, borderTopWidth: 2, borderColor: '#555', borderStyle: 'dashed' },
-  keyText: { fontSize: 12, color: '#666' },
+  keyText: { fontSize: 12, color: COLORS.textSecondary },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14, marginBottom: 40 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   swatch: { width: 14, height: 14, borderRadius: 4 },

@@ -26,6 +26,8 @@ declare
       '"cowId" text, "heatIdentificationDate" text, "conceptionDate" text, "repeatHeatDate" text, notes text',
     'calves',
       '"cowId" text, name text, breed text, mother text, father text, dob text, gender text, photo text',
+    'bulls',
+      '"cowId" text, name text, breed text, mother text, father text, dob text, photo text',
     'custom_vaccines',
       'name text'
   );

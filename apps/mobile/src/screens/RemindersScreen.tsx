@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Modal, ScrollView, Alert,
+  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { localReminders } from '../services/database';
 import DateField from '../components/DateField';
 import TimeField from '../components/TimeField';
 import { formatDate } from '../utils/date';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -98,11 +99,6 @@ export default function RemindersScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <MaterialIcons name="notifications-active" size={24} color="#1B5E20" />
-        <Text style={styles.headerTitle}>{t('reminders.title')}</Text>
-      </View>
-
       <FlatList
         data={items}
         keyExtractor={(it) => it.id}
@@ -122,10 +118,10 @@ export default function RemindersScreen() {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.overlay}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>{editingId ? t('reminders.edit') : t('reminders.add')}</Text>
-            <ScrollView>
+            <ScrollView keyboardShouldPersistTaps="handled">
               <Text style={styles.label}>{t('reminders.reminderTitle')} *</Text>
               <TextInput style={styles.input} value={fTitle} onChangeText={setFTitle} placeholder="e.g. Buy feed, Vet visit" />
 
@@ -153,22 +149,22 @@ export default function RemindersScreen() {
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
+  container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#333' },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, elevation: 1 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.textPrimary },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: RADIUS.lg, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card },
   cardDone: { opacity: 0.6 },
   check: { padding: 2 },
-  title: { fontSize: 16, fontWeight: '600', color: '#333' },
-  strike: { textDecorationLine: 'line-through', color: '#999' },
-  details: { fontSize: 13, color: '#666', marginTop: 2 },
+  title: { fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
+  strike: { textDecorationLine: 'line-through', color: COLORS.textMuted },
+  details: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
   metaRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
   metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#E8F5E9', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
   metaText: { fontSize: 12, color: '#1B5E20', fontWeight: '600' },
@@ -176,17 +172,17 @@ const styles = StyleSheet.create({
   overdueText: { color: '#C62828' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#555', marginTop: 12 },
-  emptySub: { fontSize: 14, color: '#999', textAlign: 'center', marginTop: 6 },
-  fab: { position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#1B5E20', alignItems: 'center', justifyContent: 'center', elevation: 4 },
+  emptySub: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
+  fab: { position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOWS.soft },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
-  sheetTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  label: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4, marginTop: 10 },
-  input: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#E0E0E0' },
+  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%', ...SHADOWS.card },
+  sheetTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.textPrimary, marginBottom: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 4, marginTop: 10 },
+  input: { backgroundColor: COLORS.surfaceAlt, borderRadius: RADIUS.md, padding: 12, fontSize: 15, borderWidth: 1, borderColor: COLORS.border },
   actions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
-  cancelText: { color: '#666', fontWeight: '600' },
-  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#1B5E20', alignItems: 'center' },
+  cancelText: { color: COLORS.textSecondary, fontWeight: '600' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: COLORS.primary, alignItems: 'center', ...SHADOWS.soft },
   saveText: { color: '#fff', fontWeight: '600' },
   deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   deleteText: { color: '#C62828', fontWeight: '600' },

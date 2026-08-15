@@ -5,12 +5,12 @@ import {
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { localCalves } from '../services/database';
+import { localBulls } from '../services/database';
 import { COLORS, SHADOWS, RADIUS } from '../theme';
 
-export default function CalvesScreen() {
+export default function BullsScreen() {
   const { t } = useTranslation();
-  const [calves, setCalves] = useState<any[]>([]);
+  const [bulls, setBulls] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
   const [name, setName] = useState('');
@@ -19,16 +19,15 @@ export default function CalvesScreen() {
   const [father, setFather] = useState('');
   const [mother, setMother] = useState('');
   const [dob, setDob] = useState('');
-  const [gender, setGender] = useState('');
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    try { setCalves((await localCalves.getAll()) || []); } catch {}
+    try { setBulls((await localBulls.getAll()) || []); } catch {}
   };
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setName(''); setPhoto(null); setBreed(''); setFather(''); setMother(''); setDob(''); setGender('');
+    setName(''); setPhoto(null); setBreed(''); setFather(''); setMother(''); setDob('');
   };
 
   const pickPhoto = async (fromCamera: boolean) => {
@@ -53,17 +52,16 @@ export default function CalvesScreen() {
   };
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert('Error', 'Calf name is required'); return; }
+    if (!name.trim()) { Alert.alert('Error', 'Bull name is required'); return; }
     setSaving(true);
     try {
-      await localCalves.create({
+      await localBulls.create({
         name: name.trim(),
         photo: photo || undefined,
         breed: breed || undefined,
         father: father || undefined,
         mother: mother || undefined,
         dob: dob || undefined,
-        gender: gender || undefined,
       });
       setModalVisible(false);
       resetForm();
@@ -84,11 +82,10 @@ export default function CalvesScreen() {
       )}
       <View style={{ flex: 1 }}>
         <Text style={styles.name}>{item.name}</Text>
-        {item.gender ? <Text style={styles.detail}>{t('calves.gender')}: {item.gender}</Text> : null}
-        {item.breed ? <Text style={styles.detail}>{t('cow.breed')}: {item.breed}</Text> : null}
-        <Text style={styles.detail}>{t('calves.father')}: {item.father || '-'}</Text>
-        <Text style={styles.detail}>{t('calves.mother')}: {item.mother || '-'}</Text>
-        {item.dob ? <Text style={styles.detail}>{t('calves.dob')}: {item.dob}</Text> : null}
+        {item.breed ? <Text style={styles.detail}>{t('bulls.breed')}: {item.breed}</Text> : null}
+        <Text style={styles.detail}>{t('bulls.father')}: {item.father || '-'}</Text>
+        <Text style={styles.detail}>{t('bulls.mother')}: {item.mother || '-'}</Text>
+        {item.dob ? <Text style={styles.detail}>{t('bulls.dob')}: {item.dob}</Text> : null}
       </View>
     </View>
   );
@@ -96,10 +93,21 @@ export default function CalvesScreen() {
   return (
     <View style={styles.container}>
       <FlatList
-        data={calves}
+        data={bulls}
         keyExtractor={(_, i) => String(i)}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
+        contentContainerStyle={{ paddingBottom: 96, flexGrow: 1 }}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <MaterialCommunityIcons name="cow" size={64} color="#C8E6C9" />
+            <Text style={styles.emptyTitle}>{t('bulls.emptyTitle')}</Text>
+            <Text style={styles.emptySub}>{t('bulls.emptySub')}</Text>
+            <TouchableOpacity style={styles.emptyBtn} onPress={() => { resetForm(); setModalVisible(true); }}>
+              <MaterialIcons name="add" size={18} color="#fff" />
+              <Text style={styles.emptyBtnText}>{t('bulls.addBull')}</Text>
+            </TouchableOpacity>
+          </View>
+        }
       />
 
       <TouchableOpacity style={styles.fab} onPress={() => { resetForm(); setModalVisible(true); }}>
@@ -109,7 +117,7 @@ export default function CalvesScreen() {
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('calves.addCalf')}</Text>
+            <Text style={styles.modalTitle}>{t('bulls.addBull')}</Text>
             <ScrollView keyboardShouldPersistTaps="handled">
               <TouchableOpacity style={styles.photoPicker} onPress={choosePhoto}>
                 {photo ? (
@@ -122,29 +130,20 @@ export default function CalvesScreen() {
                 )}
               </TouchableOpacity>
 
-              <Text style={styles.label}>{t('calves.name')} *</Text>
-              <TextInput style={styles.modalInput} value={name} onChangeText={setName} placeholder="Calf name" />
+              <Text style={styles.label}>{t('bulls.name')} *</Text>
+              <TextInput style={styles.modalInput} value={name} onChangeText={setName} placeholder="Bull name" />
 
-              <Text style={styles.label}>{t('calves.father')}</Text>
-              <TextInput style={styles.modalInput} value={father} onChangeText={setFather} placeholder="Sire / father" />
-
-              <Text style={styles.label}>{t('calves.mother')}</Text>
-              <TextInput style={styles.modalInput} value={mother} onChangeText={setMother} placeholder="Dam / mother" />
-
-              <Text style={styles.label}>{t('calves.dob')}</Text>
-              <TextInput style={styles.modalInput} value={dob} onChangeText={setDob} placeholder="YYYY-MM-DD" />
-
-              <Text style={styles.label}>{t('cow.breed')}</Text>
+              <Text style={styles.label}>{t('bulls.breed')} ({t('common.optional')})</Text>
               <TextInput style={styles.modalInput} value={breed} onChangeText={setBreed} placeholder="Gir, Malnadgidda, etc." />
 
-              <Text style={styles.label}>{t('calves.gender')}</Text>
-              <View style={styles.chips}>
-                {['Female', 'Male'].map((g) => (
-                  <TouchableOpacity key={g} style={[styles.chip, gender === g && styles.chipActive]} onPress={() => setGender(g)}>
-                    <Text style={[styles.chipText, gender === g && styles.chipTextActive]}>{g}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <Text style={styles.label}>{t('bulls.father')} ({t('common.optional')})</Text>
+              <TextInput style={styles.modalInput} value={father} onChangeText={setFather} placeholder="Sire / father" />
+
+              <Text style={styles.label}>{t('bulls.mother')} ({t('common.optional')})</Text>
+              <TextInput style={styles.modalInput} value={mother} onChangeText={setMother} placeholder="Dam / mother" />
+
+              <Text style={styles.label}>{t('bulls.dob')} ({t('common.optional')})</Text>
+              <TextInput style={styles.modalInput} value={dob} onChangeText={setDob} placeholder="YYYY-MM-DD" />
             </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
@@ -168,7 +167,11 @@ const styles = StyleSheet.create({
   thumbPlaceholder: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center' },
   name: { fontSize: 18, fontWeight: 'bold', color: COLORS.textPrimary, marginBottom: 4 },
   detail: { fontSize: 14, color: '#555', marginTop: 2 },
-  empty: { textAlign: 'center', marginTop: 48, color: COLORS.textMuted },
+  emptyWrap: { alignItems: 'center', marginTop: 64, paddingHorizontal: 24 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#555', marginTop: 12 },
+  emptySub: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', marginTop: 6 },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.primary, borderRadius: 24, paddingHorizontal: 20, paddingVertical: 12, marginTop: 16, ...SHADOWS.soft },
+  emptyBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
     backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOWS.soft,
@@ -185,11 +188,6 @@ const styles = StyleSheet.create({
   photoHint: { fontSize: 11, color: '#1B5E20', marginTop: 2 },
   label: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 4, marginTop: 10 },
   modalInput: { backgroundColor: COLORS.surfaceAlt, borderRadius: RADIUS.md, padding: 12, fontSize: 15, borderWidth: 1, borderColor: COLORS.border },
-  chips: { flexDirection: 'row', gap: 8 },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18, backgroundColor: '#EEEEEE' },
-  chipActive: { backgroundColor: '#1B5E20' },
-  chipText: { fontSize: 13, color: '#555' },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
   cancelText: { color: COLORS.textSecondary, fontWeight: '600' },

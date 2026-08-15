@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Modal, ScrollView, Alert,
+  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import DateField from '../components/DateField';
 import CowAccordion from '../components/CowAccordion';
 import CowPicker from '../components/CowPicker';
 import { formatDate } from '../utils/date';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -201,10 +202,6 @@ export default function HealthScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <MaterialIcons name="local-hospital" size={24} color="#1B5E20" />
-        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333' }}>{t('health.title')}</Text>
-      </View>
       <View style={styles.filters}>
         <TouchableOpacity
           style={[styles.filterBtn, filter === 'all' && styles.filterActive]}
@@ -239,7 +236,7 @@ export default function HealthScreen() {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{editingId ? t('health.editRecord') : t('health.addRecord')}</Text>
 
@@ -259,7 +256,7 @@ export default function HealthScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView>
+            <ScrollView keyboardShouldPersistTaps="handled">
               <Text style={styles.label}>{t('cow.cowId')} *</Text>
               <CowPicker value={fCowId} onChange={setFCowId} style={styles.modalInput} disabled={!!editingId} />
 
@@ -331,47 +328,47 @@ export default function HealthScreen() {
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
+  container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
   filters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#E0E0E0' },
   filterActive: { backgroundColor: '#1B5E20' },
-  filterText: { fontSize: 13, color: '#666' },
+  filterText: { fontSize: 13, color: COLORS.textSecondary },
   filterTextActive: { color: '#fff' },
-  input: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 12, borderWidth: 1, borderColor: '#E0E0E0' },
-  card: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 10, elevation: 1 },
+  input: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, padding: 12, fontSize: 15, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border },
+  card: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, marginBottom: 10, ...SHADOWS.card, borderWidth: 1, borderColor: COLORS.border },
   treatmentCard: { borderLeftWidth: 4, borderLeftColor: '#1565C0' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cowId: { fontSize: 13, fontWeight: '600', color: '#666' },
+  cowId: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary },
   badge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 2 },
   badgeVacc: { backgroundColor: '#E8F5E9' },
   badgeTreat: { backgroundColor: '#E3F2FD' },
-  badgeText: { fontSize: 11, fontWeight: '600', color: '#333' },
-  type: { fontSize: 16, fontWeight: 'bold', color: '#333', marginTop: 4 },
-  date: { fontSize: 13, color: '#666', marginTop: 4 },
+  badgeText: { fontSize: 11, fontWeight: '600', color: COLORS.textPrimary },
+  type: { fontSize: 16, fontWeight: 'bold', color: COLORS.textPrimary, marginTop: 4 },
+  date: { fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
   sub: { fontSize: 13, color: '#444', marginTop: 2 },
-  notes: { fontSize: 12, color: '#999', marginTop: 4 },
-  empty: { textAlign: 'center', marginTop: 48, color: '#999' },
+  notes: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },
+  empty: { textAlign: 'center', marginTop: 48, color: COLORS.textMuted },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#1B5E20', alignItems: 'center', justifyContent: 'center', elevation: 4,
+    backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', ...SHADOWS.soft,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
+  modalCard: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.textPrimary, marginBottom: 12 },
   modeTabs: { flexDirection: 'row', borderRadius: 10, overflow: 'hidden', backgroundColor: '#E0E0E0', marginBottom: 8 },
   modeTab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
   modeTabActive: { backgroundColor: '#1B5E20' },
-  modeTabText: { fontSize: 14, fontWeight: '600', color: '#666' },
+  modeTabText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
   modeTabTextActive: { color: '#fff' },
-  label: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4, marginTop: 10 },
-  modalInput: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#E0E0E0' },
+  label: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 4, marginTop: 10 },
+  modalInput: { backgroundColor: COLORS.surfaceAlt, borderRadius: RADIUS.md, padding: 12, fontSize: 15, borderWidth: 1, borderColor: COLORS.border },
   autoHint: { fontSize: 12, color: '#1B5E20', marginTop: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#EEEEEE' },
@@ -380,8 +377,8 @@ const styles = StyleSheet.create({
   chipTextActive: { color: '#fff', fontWeight: '600' },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
-  cancelText: { color: '#666', fontWeight: '600' },
-  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#1B5E20', alignItems: 'center' },
+  cancelText: { color: COLORS.textSecondary, fontWeight: '600' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: COLORS.primary, alignItems: 'center', ...SHADOWS.soft },
   saveText: { color: '#fff', fontWeight: '600' },
   deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   deleteText: { color: '#C62828', fontWeight: '600' },

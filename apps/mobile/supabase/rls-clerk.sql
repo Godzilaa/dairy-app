@@ -3,7 +3,7 @@
 do $$
 declare tbl text;
 begin
-  foreach tbl in array array['cows','health_records','milk_feed','heat_records','calves','custom_vaccines']
+  foreach tbl in array array['cows','health_records','milk_feed','heat_records','calves','bulls','custom_vaccines']
   loop
     if exists (select 1 from information_schema.columns
                where table_schema='public' and table_name=tbl and column_name='owner_email') then

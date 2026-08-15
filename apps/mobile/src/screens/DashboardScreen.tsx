@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { localCows, localMilk, localEvents, CalendarEvent } from '../services/database';
+import { localCows, localMilk, localEvents, localBulls, localCalves, CalendarEvent } from '../services/database';
 import { formatDate } from '../utils/date';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -52,6 +53,7 @@ export default function DashboardScreen() {
   const MONTHS = Array.isArray(localizedMonths) && localizedMonths.length === 12
     ? (localizedMonths as string[]) : MONTHS_EN;
   const [stats, setStats] = useState({ totalCows: 0, milkingCows: 0 });
+  const [totalAnimals, setTotalAnimals] = useState(0); // cows + bulls + calves
   const [todayMilk, setTodayMilk] = useState(0);
   const [monthDaily, setMonthDaily] = useState<{ date: string; total: number }[]>([]);
   const [byCow, setByCow] = useState<{ cowId: string; date: string; total: number }[]>([]);
@@ -59,21 +61,28 @@ export default function DashboardScreen() {
   const [showFollowUps, setShowFollowUps] = useState(true); // collapsible follow-ups list
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [typePickerVisible, setTypePickerVisible] = useState(false); // Bull / Cow / Calf chooser
+  const [cowFilterVisible, setCowFilterVisible] = useState(false); // Pregnant / Milking / Non-milking chooser
 
   const now = new Date();
   const todayISO = iso(now.getFullYear(), now.getMonth(), now.getDate());
+  // Time-aware greeting keeps the screen personal without echoing the "Dashboard" header title.
+  const greetKey = now.getHours() < 12 ? 'goodMorning' : now.getHours() < 17 ? 'goodAfternoon' : 'goodEvening';
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [selected, setSelected] = useState(todayISO);
 
   const loadData = async () => {
     try {
-      const [s, m, ev] = await Promise.all([
+      const [s, m, ev, bullCount, calfCount] = await Promise.all([
         localCows.getStats(),
         localMilk.getTodayTotal(),
         localEvents.getAll(),
+        localBulls.count(),
+        localCalves.count(),
       ]);
       setStats(s);
+      setTotalAnimals((s.totalCows || 0) + bullCount + calfCount);
       setTodayMilk(m);
       setEvents(ev || []);
     } catch {}
@@ -167,14 +176,34 @@ export default function DashboardScreen() {
       });
   }, [byCow]);
 
-  const Card = ({ title, value, color, onPress }: { title: string; value: string; color: string; onPress?: () => void }) => (
+  // The Total-cows card opens a Bull / Cow / Calf chooser, then routes to that page.
+  // Picking "Cow" opens a second chooser to filter by Pregnant / Milking / Non-milking.
+  const goToType = (target: 'Bulls' | 'Cows' | 'Calves') => {
+    setTypePickerVisible(false);
+    if (target === 'Cows') { setCowFilterVisible(true); return; }
+    navigation.navigate(target);
+  };
+
+  // Route to the Cows tab showing only the chosen subset.
+  const goToCowFilter = (filter: 'all' | 'pregnant' | 'milking' | 'nonmilking') => {
+    setCowFilterVisible(false);
+    navigation.navigate('Cows', { filter });
+  };
+
+  const Card = ({ title, value, color, icon, onPress }: { title: string; value: string; color: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; onPress?: () => void }) => (
     <TouchableOpacity
-      style={[styles.card, { borderLeftColor: color }]}
-      activeOpacity={onPress ? 0.7 : 1}
+      style={styles.statCard}
+      activeOpacity={onPress ? 0.85 : 1}
       disabled={!onPress}
       onPress={onPress}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={[styles.cardValue, { color }]}>{value}</Text>
+      <View style={styles.statTopRow}>
+        <View style={[styles.statIcon, { backgroundColor: color + '18' }]}>
+          <MaterialCommunityIcons name={icon} size={20} color={color} />
+        </View>
+        {onPress ? <MaterialIcons name="chevron-right" size={20} color={COLORS.textMuted} /> : null}
+      </View>
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={styles.statTitle}>{title}</Text>
     </TouchableOpacity>
   );
 
@@ -183,15 +212,62 @@ export default function DashboardScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 32 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <MaterialIcons name="dashboard" size={24} color="#1B5E20" />
-        <Text style={styles.greeting}>{t('dashboard.title')}, {user?.name || ''}</Text>
+      <View style={styles.greetWrap}>
+        <Text style={styles.greetKicker}>{t(`dashboard.${greetKey}`)}</Text>
+        {user?.name ? <Text style={styles.greetName}>{user.name}</Text> : null}
       </View>
 
       <View style={styles.cardsRow}>
-        <Card title={t('dashboard.totalCows')} value={String(stats.totalCows)} color="#1B5E20" onPress={() => navigation.navigate('Cows')} />
-        <Card title={t('dashboard.todayMilk')} value={`${todayMilk.toFixed(1)} L`} color="#F57F17" onPress={() => navigation.navigate('MilkFeed')} />
+        <Card title={t('dashboard.totalAnimals')} value={String(totalAnimals)} color={COLORS.primary} icon="cow" onPress={() => setTypePickerVisible(true)} />
+        <Card title={t('dashboard.todayMilk')} value={`${todayMilk.toFixed(1)} L`} color="#E08A00" icon="cup-water" onPress={() => navigation.navigate('MilkFeed')} />
       </View>
+
+      {/* Bull / Cow / Calf chooser — opened from the Total cows card. */}
+      <Modal visible={typePickerVisible} animationType="slide" transparent onRequestClose={() => setTypePickerVisible(false)}>
+        <TouchableOpacity style={styles.pickerOverlay} activeOpacity={1} onPress={() => setTypePickerVisible(false)}>
+          <View style={styles.pickerSheet}>
+            <View style={styles.pickerHandle} />
+            <Text style={styles.pickerTitle}>{t('dashboard.chooseType')}</Text>
+            {([
+              { key: 'Bulls', label: t('dashboard.bull'), icon: 'cow' as const, color: '#8D5E34' },
+              { key: 'Cows', label: t('dashboard.cow'), icon: 'cow' as const, color: '#1B5E20' },
+              { key: 'Calves', label: t('dashboard.calf'), icon: 'cow' as const, color: '#43A047' },
+            ] as const).map((opt) => (
+              <TouchableOpacity key={opt.key} style={styles.pickerRow} onPress={() => goToType(opt.key)}>
+                <View style={[styles.pickerIcon, { backgroundColor: opt.color }]}>
+                  <MaterialCommunityIcons name={opt.icon} size={22} color="#fff" />
+                </View>
+                <Text style={styles.pickerLabel}>{opt.label}</Text>
+                <MaterialIcons name="chevron-right" size={24} color="#BDBDBD" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Cow subset chooser — Pregnant / Milking / Non-milking. */}
+      <Modal visible={cowFilterVisible} animationType="slide" transparent onRequestClose={() => setCowFilterVisible(false)}>
+        <TouchableOpacity style={styles.pickerOverlay} activeOpacity={1} onPress={() => setCowFilterVisible(false)}>
+          <View style={styles.pickerSheet}>
+            <View style={styles.pickerHandle} />
+            <Text style={styles.pickerTitle}>{t('dashboard.chooseCowFilter')}</Text>
+            {([
+              { key: 'pregnant', label: t('dashboard.filterPregnant'), icon: 'baby-carriage' as const, color: '#C2185B' },
+              { key: 'milking', label: t('dashboard.filterMilking'), icon: 'cup-water' as const, color: '#E08A00' },
+              { key: 'nonmilking', label: t('dashboard.filterNonMilking'), icon: 'cow-off' as const, color: '#8D5E34' },
+              { key: 'all', label: t('dashboard.filterAll'), icon: 'cow' as const, color: '#1B5E20' },
+            ] as const).map((opt) => (
+              <TouchableOpacity key={opt.key} style={styles.pickerRow} onPress={() => goToCowFilter(opt.key)}>
+                <View style={[styles.pickerIcon, { backgroundColor: opt.color }]}>
+                  <MaterialCommunityIcons name={opt.icon} size={22} color="#fff" />
+                </View>
+                <Text style={styles.pickerLabel}>{opt.label}</Text>
+                <MaterialIcons name="chevron-right" size={24} color="#BDBDBD" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Calendar */}
       <View style={styles.calendarCard}>
@@ -373,14 +449,32 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
-  greeting: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, color: '#333' },
+  container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
+  greetWrap: { marginBottom: 16 },
+  greetKicker: { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary },
+  greetName: { fontSize: 24, fontWeight: 'bold', color: COLORS.textPrimary, letterSpacing: -0.3, marginTop: 1 },
   cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  card: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, borderLeftWidth: 4, elevation: 2 },
-  cardTitle: { fontSize: 12, color: '#666', marginBottom: 4 },
-  cardValue: { fontSize: 20, fontWeight: 'bold' },
+  statCard: {
+    flex: 1, backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16,
+    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
+  },
+  statTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  statIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  statValue: { fontSize: 26, fontWeight: 'bold', letterSpacing: -0.5 },
+  statTitle: { fontSize: 12.5, color: COLORS.textSecondary, marginTop: 2, fontWeight: '500' },
 
-  calendarCard: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 16, elevation: 2 },
+  pickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  pickerSheet: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32 },
+  pickerHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E0E0E0', marginBottom: 14 },
+  pickerTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 12 },
+  pickerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
+  },
+  pickerIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  pickerLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: '#333' },
+
+  calendarCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card },
   calHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   navBtn: { padding: 4 },
   calTitle: { fontSize: 16, fontWeight: '700', color: '#333' },
@@ -401,7 +495,7 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendText: { fontSize: 11, color: '#666' },
 
-  section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, elevation: 2 },
+  section: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: '#333', marginBottom: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   noEvents: { fontSize: 13, color: '#999' },

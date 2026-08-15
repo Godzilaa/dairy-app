@@ -9,6 +9,7 @@ import { isCloudSyncConfigured } from '../services/supabase';
 import { isDriveConfigured } from '../services/googleDrive';
 import DriveBackupSection from '../components/DriveBackupSection';
 import i18n from '../i18n';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -99,20 +100,20 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
-  section: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, elevation: 2 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 },
+  container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
+  section: { backgroundColor: '#fff', borderRadius: RADIUS.lg, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.soft },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 12 },
   field: { fontSize: 15, color: '#555', marginBottom: 4 },
   langBtn: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   langText: { fontSize: 15, color: '#1B5E20' },
-  hint: { fontSize: 13, color: '#999', marginBottom: 4 },
-  syncStatus: { fontSize: 12, color: '#666', marginTop: 6, marginBottom: 10 },
-  syncBtn: { backgroundColor: '#1B5E20', borderRadius: 10, padding: 12, alignItems: 'center' },
+  hint: { fontSize: 13, color: COLORS.textMuted, marginBottom: 4 },
+  syncStatus: { fontSize: 12, color: COLORS.textSecondary, marginTop: 6, marginBottom: 10 },
+  syncBtn: { backgroundColor: COLORS.primary, borderRadius: 10, padding: 12, alignItems: 'center', ...SHADOWS.soft },
   syncBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   driveHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   driveRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   driveBtn: { flex: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', alignItems: 'center', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#A5D6A7', backgroundColor: '#E8F5E9' },
   driveBtnText: { color: '#1B5E20', fontSize: 13, fontWeight: '600' },
-  logoutBtn: { backgroundColor: '#fff', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#C62828', marginTop: 8 },
+  logoutBtn: { backgroundColor: '#fff', borderRadius: RADIUS.lg, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#C62828', marginTop: 8, ...SHADOWS.soft },
   logoutText: { color: '#C62828', fontSize: 16, fontWeight: '600' },
 });

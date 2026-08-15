@@ -22,7 +22,7 @@ try {
   const rows = await client`
     select table_name from information_schema.tables
     where table_schema = 'public'
-      and table_name in ('cows','health_records','milk_feed','heat_records','calves','custom_vaccines')
+      and table_name in ('cows','health_records','milk_feed','heat_records','calves','bulls','custom_vaccines')
     order by table_name`;
   console.log('✅ schema applied. tables present:', rows.map((r) => r.table_name).join(', '));
 } finally {

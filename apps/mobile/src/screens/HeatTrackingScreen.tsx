@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Modal, Alert,
+  View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Modal, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { localHeat, expectedDueDate } from '../services/database';
 import DateField from '../components/DateField';
 import CowPicker from '../components/CowPicker';
 import { formatDate } from '../utils/date';
+import { COLORS, SHADOWS, RADIUS } from '../theme';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -108,11 +109,6 @@ export default function HeatTrackingScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <MaterialIcons name="favorite" size={24} color="#C2185B" />
-        <Text style={styles.title}>{t('heat.title')}</Text>
-      </View>
-
       <TextInput
         style={styles.input}
         placeholder={t('heat.enterCowId')}
@@ -157,10 +153,10 @@ export default function HeatTrackingScreen() {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{editingId ? t('heat.editRecord') : t('heat.addRecord')}</Text>
-            <ScrollView>
+            <ScrollView keyboardShouldPersistTaps="handled">
               <Text style={styles.label}>{t('cow.cowId')} *</Text>
               <CowPicker value={cowId} onChange={setCowId} style={styles.modalInput} disabled={!!editingId} />
 
@@ -198,42 +194,42 @@ export default function HeatTrackingScreen() {
               </TouchableOpacity>
             )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#333' },
-  input: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 12, borderWidth: 1, borderColor: '#E0E0E0' },
+  container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', color: COLORS.textPrimary },
+  input: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, padding: 12, fontSize: 15, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border },
   row: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E8E8E8', backgroundColor: '#fff' },
   rowAlt: { backgroundColor: '#FAFAFA' },
   headerRow: { backgroundColor: '#C2185B', borderTopLeftRadius: 8, borderTopRightRadius: 8 },
-  cell: { paddingVertical: 12, paddingHorizontal: 10, fontSize: 13, color: '#333' },
+  cell: { paddingVertical: 12, paddingHorizontal: 10, fontSize: 13, color: COLORS.textPrimary },
   headerCell: { color: '#fff', fontWeight: '700', fontSize: 12 },
   colDate: { width: 130 },
   colNotes: { width: 160 },
   notesCell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
-  notesText: { fontSize: 13, color: '#333', flex: 1 },
+  notesText: { fontSize: 13, color: COLORS.textPrimary, flex: 1 },
   dueCell: { color: '#8D5E34', fontWeight: '600' },
-  empty: { textAlign: 'center', marginTop: 40, color: '#999', width: 680 },
+  empty: { textAlign: 'center', marginTop: 40, color: COLORS.textMuted, width: 680 },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
     backgroundColor: '#C2185B', alignItems: 'center', justifyContent: 'center', elevation: 4,
   },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  label: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4, marginTop: 10 },
-  modalInput: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#E0E0E0' },
+  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%', ...SHADOWS.card },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.textPrimary, marginBottom: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginBottom: 4, marginTop: 10 },
+  modalInput: { backgroundColor: COLORS.surfaceAlt, borderRadius: RADIUS.md, padding: 12, fontSize: 15, borderWidth: 1, borderColor: COLORS.border },
   readonlyInput: { backgroundColor: '#EFEAE4', justifyContent: 'center' },
   readonlyText: { fontSize: 15, color: '#8D5E34', fontWeight: '600' },
   autoHint: { fontSize: 12, color: '#C2185B', marginTop: 4 },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#EEEEEE', alignItems: 'center' },
-  cancelText: { color: '#666', fontWeight: '600' },
+  cancelText: { color: COLORS.textSecondary, fontWeight: '600' },
   saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#C2185B', alignItems: 'center' },
   saveText: { color: '#fff', fontWeight: '600' },
   deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
