@@ -128,6 +128,8 @@ export const en = {
   milk: {
     chartAxis: 'X: date · Y: milk (L). Solid = morning, dashed = evening.',
     title: 'Milk & Feed',
+    milkOnly: 'Milk',
+    chooseLog: 'What would you like to log?',
     addRecord: 'Add Milk Record',
     editRecord: 'Edit Milk Record',
     date: 'Date',
@@ -136,6 +138,18 @@ export const en = {
     total: 'Total (L)',
     feedGiven: 'Feed Given',
     dryDate: 'Dry Date',
+    notes: 'Notes',
+  },
+  feed: {
+    title: 'Feed',
+    todayFeed: "Today's Feed",
+    addRecord: 'Add Feed Record',
+    editRecord: 'Edit Feed Record',
+    date: 'Date',
+    feedType: 'Feed Type',
+    quantity: 'Quantity',
+    unit: 'Unit',
+    total: 'Total',
     notes: 'Notes',
   },
   calves: {

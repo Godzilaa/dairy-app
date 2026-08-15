@@ -85,6 +85,19 @@ const createSchema = async (): Promise<void> => {
     )`
   );
   await db.execAsync(
+    `CREATE TABLE IF NOT EXISTS feed_records (
+      id TEXT PRIMARY KEY,
+      cowId TEXT,
+      feedDate TEXT,
+      feedType TEXT,
+      quantity REAL,
+      unit TEXT,
+      notes TEXT,
+      createdAt TEXT,
+      updatedAt TEXT
+    )`
+  );
+  await db.execAsync(
     `CREATE TABLE IF NOT EXISTS calves (
       id TEXT PRIMARY KEY,
       cowId TEXT,
@@ -196,7 +209,7 @@ const addColumn = async (table: string, column: string, type: string): Promise<v
 };
 
 // Tables that sync to the cloud and support soft-delete tombstones.
-const SYNCED_TABLES = ['cows', 'health_records', 'milk_feed', 'heat_records', 'calves', 'bulls', 'reminders'];
+const SYNCED_TABLES = ['cows', 'health_records', 'milk_feed', 'feed_records', 'heat_records', 'calves', 'bulls', 'reminders'];
 
 const runMigrations = async (): Promise<void> => {
   await addColumn('health_records', 'recordType', "TEXT DEFAULT 'vaccination'");
@@ -214,6 +227,7 @@ const runMigrations = async (): Promise<void> => {
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_health_cow ON health_records(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_milk_cow ON milk_feed(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_milk_date ON milk_feed(milkingDate)');
+  await db.execAsync('CREATE INDEX IF NOT EXISTS idx_feed_cow ON feed_records(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_heat_cow ON heat_records(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_calves_cow ON calves(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_bulls_cow ON bulls(cowId)');
@@ -432,6 +446,51 @@ export const localMilk = {
   delete: async (id: string): Promise<void> => {
     const now = new Date().toISOString();
     await db.runAsync('UPDATE milk_feed SET deletedAt=?, updatedAt=? WHERE id=?', [now, now, id]);
+    triggerSync();
+  },
+};
+
+export const localFeed = {
+  getAll: async (cowId?: string): Promise<any[]> => {
+    if (cowId) {
+      return db.getAllAsync('SELECT * FROM feed_records WHERE cowId = ? AND deletedAt IS NULL ORDER BY feedDate DESC, createdAt DESC', [cowId]);
+    }
+    return db.getAllAsync('SELECT * FROM feed_records WHERE deletedAt IS NULL ORDER BY feedDate DESC, createdAt DESC');
+  },
+
+  getTodayTotal: async (): Promise<number> => {
+    const today = new Date().toISOString().split('T')[0];
+    const row = await db.getFirstAsync<{ total: number }>(
+      `SELECT COALESCE(SUM(quantity),0) as total FROM feed_records WHERE feedDate = ? AND deletedAt IS NULL`,
+      [today]
+    );
+    return row?.total || 0;
+  },
+
+  create: async (data: any): Promise<any> => {
+    const id = uuid();
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `INSERT INTO feed_records (id, cowId, feedDate, feedType, quantity, unit, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?)`,
+      [id, data.cowId, data.feedDate, data.feedType || null, data.quantity ?? null, data.unit || null, data.notes || null, now, now]
+    );
+    triggerSync();
+    return { id, ...data };
+  },
+
+  update: async (id: string, data: any): Promise<any> => {
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `UPDATE feed_records SET feedDate=?, feedType=?, quantity=?, unit=?, notes=?, updatedAt=? WHERE id=?`,
+      [data.feedDate, data.feedType || null, data.quantity ?? null, data.unit || null, data.notes || null, now, id]
+    );
+    triggerSync();
+    return { id, ...data };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const now = new Date().toISOString();
+    await db.runAsync('UPDATE feed_records SET deletedAt=?, updatedAt=? WHERE id=?', [now, now, id]);
     triggerSync();
   },
 };

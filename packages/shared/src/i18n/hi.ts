@@ -128,6 +128,8 @@ export const hi = {
   milk: {
     chartAxis: 'X: तिथि · Y: दूध (L). ठोस = सुबह, धराशायी = शाम।',
     title: 'दूध और चारा',
+    milkOnly: 'दूध',
+    chooseLog: 'आप क्या दर्ज करना चाहते हैं?',
     addRecord: 'दूध रिकॉर्ड जोड़ें',
     editRecord: 'दूध रिकॉर्ड संपादित करें',
     date: 'दिनांक',
@@ -136,6 +138,18 @@ export const hi = {
     total: 'कुल (लीटर)',
     feedGiven: 'चारा दिया',
     dryDate: 'सूखा दिनांक',
+    notes: 'नोट्स',
+  },
+  feed: {
+    title: 'चारा',
+    todayFeed: 'आज का चारा',
+    addRecord: 'चारा रिकॉर्ड जोड़ें',
+    editRecord: 'चारा रिकॉर्ड संपादित करें',
+    date: 'दिनांक',
+    feedType: 'चारे का प्रकार',
+    quantity: 'मात्रा',
+    unit: 'इकाई',
+    total: 'कुल',
     notes: 'नोट्स',
   },
   calves: {

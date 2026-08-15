@@ -19,9 +19,10 @@ const scheduleSync = () => {
 setSyncTrigger(scheduleSync);
 
 // Tables mirrored to Supabase (see apps/mobile/supabase/mobile-schema.sql).
-// `bulls` is kept last: on installs whose Supabase project hasn't had the updated
-// schema applied yet, its per-table error won't block the tables synced before it.
-const TABLES = ['cows', 'health_records', 'milk_feed', 'heat_records', 'calves', 'custom_vaccines', 'reminders', 'bulls'];
+// `bulls` and `feed_records` are kept last: on installs whose Supabase project
+// hasn't had the updated schema applied yet, their per-table error won't block
+// the tables synced before them.
+const TABLES = ['cows', 'health_records', 'milk_feed', 'heat_records', 'calves', 'custom_vaccines', 'reminders', 'bulls', 'feed_records'];
 
 let syncing = false;
 

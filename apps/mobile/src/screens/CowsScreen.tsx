@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl, Image,
+  View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl, Image, ScrollView,
 } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -63,20 +63,23 @@ export default function CowsScreen() {
   // Refresh on focus so pregnancy status reflects newly added heat records.
   useFocusEffect(useCallback(() => { loadCows(); }, [search]));
 
-  const visibleCows = cows.filter((c) => {
-    switch (filter) {
+  const matchesFilter = (c: Cow, f: CowFilter) => {
+    switch (f) {
       case 'pregnant': return !!pregnancy[c.cowId]?.isPregnant;
       case 'milking': return c.status === 'Milking';
       case 'nonmilking': return c.status !== 'Milking';
       default: return true;
     }
-  });
+  };
 
-  const filterLabel = (f: CowFilter) =>
-    f === 'pregnant' ? t('dashboard.filterPregnant')
-      : f === 'milking' ? t('dashboard.filterMilking')
-        : f === 'nonmilking' ? t('dashboard.filterNonMilking')
-          : '';
+  const visibleCows = cows.filter((c) => matchesFilter(c, filter));
+
+  const FILTERS: { key: CowFilter; label: string }[] = [
+    { key: 'all', label: t('dashboard.filterAll') },
+    { key: 'pregnant', label: t('dashboard.filterPregnant') },
+    { key: 'milking', label: t('dashboard.filterMilking') },
+    { key: 'nonmilking', label: t('dashboard.filterNonMilking') },
+  ];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -192,12 +195,26 @@ export default function CowsScreen() {
           <Text style={styles.scanIconText}>{t('cow.scanTag')}</Text>
         </TouchableOpacity>
       </View>
-      {filter !== 'all' ? (
-        <TouchableOpacity style={styles.filterChip} onPress={() => setFilter('all')}>
-          <Text style={styles.filterChipText}>{filterLabel(filter)} · {visibleCows.length}</Text>
-          <MaterialIcons name="close" size={16} color="#1B5E20" />
-        </TouchableOpacity>
-      ) : null}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterRow}
+        contentContainerStyle={styles.filterRowContent}>
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          const count = cows.filter((c) => matchesFilter(c, f.key)).length;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.filterChip, active && styles.filterChipActive]}
+              onPress={() => setFilter(f.key)}>
+              <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                {f.label} ({count})
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
       <FlatList
         data={visibleCows}
         keyExtractor={(item) => item.id}
@@ -249,12 +266,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#1565C0', borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center',
   },
   scanIconText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  filterRow: { marginBottom: 12, flexGrow: 0 },
+  filterRowContent: { gap: 8, paddingRight: 8 },
   filterChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
-    marginBottom: 12, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16,
-    backgroundColor: '#E8F5E9', borderWidth: 1, borderColor: '#A5D6A7',
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18,
+    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border,
   },
-  filterChipText: { fontSize: 13, color: '#1B5E20', fontWeight: '600' },
+  filterChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterChipText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '600' },
+  filterChipTextActive: { color: '#fff' },
   cowCard: {
     flexDirection: 'row',
     alignItems: 'center',

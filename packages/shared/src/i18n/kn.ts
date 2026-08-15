@@ -128,6 +128,8 @@ export const kn = {
   milk: {
     chartAxis: 'X: ದಿನಾಂಕ · Y: ಹಾಲು (L). ಘನ = ಬೆಳಿಗ್ಗೆ, ಚುಕ್ಕೆ = ಸಂಜೆ.',
     title: 'ಹಾಲು ಮತ್ತು ಮೇವು',
+    milkOnly: 'ಹಾಲು',
+    chooseLog: 'ನೀವು ಏನನ್ನು ದಾಖಲಿಸಲು ಬಯಸುತ್ತೀರಿ?',
     addRecord: 'ಹಾಲು ದಾಖಲೆ ಸೇರಿಸಿ',
     editRecord: 'ಹಾಲು ದಾಖಲೆ ಸಂಪಾದಿಸಿ',
     date: 'ದಿನಾಂಕ',
@@ -136,6 +138,18 @@ export const kn = {
     total: 'ಒಟ್ಟು (ಲೀ)',
     feedGiven: 'ಮೇವು ನೀಡಲಾಗಿದೆ',
     dryDate: 'ಒಣ ದಿನಾಂಕ',
+    notes: 'ಟಿಪ್ಪಣಿಗಳು',
+  },
+  feed: {
+    title: 'ಮೇವು',
+    todayFeed: 'ಇಂದಿನ ಮೇವು',
+    addRecord: 'ಮೇವು ದಾಖಲೆ ಸೇರಿಸಿ',
+    editRecord: 'ಮೇವು ದಾಖಲೆ ಸಂಪಾದಿಸಿ',
+    date: 'ದಿನಾಂಕ',
+    feedType: 'ಮೇವಿನ ಪ್ರಕಾರ',
+    quantity: 'ಪ್ರಮಾಣ',
+    unit: 'ಘಟಕ',
+    total: 'ಒಟ್ಟು',
     notes: 'ಟಿಪ್ಪಣಿಗಳು',
   },
   calves: {

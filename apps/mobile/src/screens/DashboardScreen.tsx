@@ -4,7 +4,7 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { localCows, localMilk, localEvents, localBulls, localCalves, CalendarEvent } from '../services/database';
+import { localCows, localMilk, localEvents, localBulls, localCalves, getPregnancyByCow, CalendarEvent } from '../services/database';
 import { formatDate } from '../utils/date';
 import { COLORS, SHADOWS, RADIUS } from '../theme';
 
@@ -53,6 +53,7 @@ export default function DashboardScreen() {
   const MONTHS = Array.isArray(localizedMonths) && localizedMonths.length === 12
     ? (localizedMonths as string[]) : MONTHS_EN;
   const [stats, setStats] = useState({ totalCows: 0, milkingCows: 0 });
+  const [cowCounts, setCowCounts] = useState({ all: 0, pregnant: 0, milking: 0, nonmilking: 0 });
   const [totalAnimals, setTotalAnimals] = useState(0); // cows + bulls + calves
   const [todayMilk, setTodayMilk] = useState(0);
   const [monthDaily, setMonthDaily] = useState<{ date: string; total: number }[]>([]);
@@ -74,17 +75,25 @@ export default function DashboardScreen() {
 
   const loadData = async () => {
     try {
-      const [s, m, ev, bullCount, calfCount] = await Promise.all([
+      const [s, m, ev, bullCount, calfCount, cowList, preg] = await Promise.all([
         localCows.getStats(),
         localMilk.getTodayTotal(),
         localEvents.getAll(),
         localBulls.count(),
         localCalves.count(),
+        localCows.getAll(),
+        getPregnancyByCow(),
       ]);
       setStats(s);
       setTotalAnimals((s.totalCows || 0) + bullCount + calfCount);
       setTodayMilk(m);
       setEvents(ev || []);
+      setCowCounts({
+        all: cowList.length,
+        pregnant: cowList.filter((c: any) => preg[c.cowId]?.isPregnant).length,
+        milking: cowList.filter((c: any) => c.status === 'Milking').length,
+        nonmilking: cowList.filter((c: any) => c.status !== 'Milking').length,
+      });
     } catch {}
   };
 
@@ -219,7 +228,7 @@ export default function DashboardScreen() {
 
       <View style={styles.cardsRow}>
         <Card title={t('dashboard.totalAnimals')} value={String(totalAnimals)} color={COLORS.primary} icon="cow" onPress={() => setTypePickerVisible(true)} />
-        <Card title={t('dashboard.todayMilk')} value={`${todayMilk.toFixed(1)} L`} color="#E08A00" icon="cup-water" onPress={() => navigation.navigate('MilkFeed')} />
+        <Card title={t('dashboard.todayMilk')} value={`${todayMilk.toFixed(1)} L`} color="#E08A00" icon="cup-water" onPress={() => navigation.navigate('Milk')} />
       </View>
 
       {/* Bull / Cow / Calf chooser — opened from the Total cows card. */}
@@ -252,16 +261,17 @@ export default function DashboardScreen() {
             <View style={styles.pickerHandle} />
             <Text style={styles.pickerTitle}>{t('dashboard.chooseCowFilter')}</Text>
             {([
+              { key: 'all', label: t('dashboard.filterAll'), icon: 'cow' as const, color: '#1B5E20' },
               { key: 'pregnant', label: t('dashboard.filterPregnant'), icon: 'baby-carriage' as const, color: '#C2185B' },
               { key: 'milking', label: t('dashboard.filterMilking'), icon: 'cup-water' as const, color: '#E08A00' },
               { key: 'nonmilking', label: t('dashboard.filterNonMilking'), icon: 'cow-off' as const, color: '#8D5E34' },
-              { key: 'all', label: t('dashboard.filterAll'), icon: 'cow' as const, color: '#1B5E20' },
             ] as const).map((opt) => (
               <TouchableOpacity key={opt.key} style={styles.pickerRow} onPress={() => goToCowFilter(opt.key)}>
                 <View style={[styles.pickerIcon, { backgroundColor: opt.color }]}>
                   <MaterialCommunityIcons name={opt.icon} size={22} color="#fff" />
                 </View>
                 <Text style={styles.pickerLabel}>{opt.label}</Text>
+                <Text style={styles.pickerCount}>{cowCounts[opt.key]}</Text>
                 <MaterialIcons name="chevron-right" size={24} color="#BDBDBD" />
               </TouchableOpacity>
             ))}
@@ -473,6 +483,7 @@ const styles = StyleSheet.create({
   },
   pickerIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   pickerLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: '#333' },
+  pickerCount: { fontSize: 16, fontWeight: '700', color: '#1B5E20', marginRight: 4 },
 
   calendarCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card },
   calHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },

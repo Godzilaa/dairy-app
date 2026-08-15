@@ -51,8 +51,11 @@ export default function CowDetailScreen() {
         <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Health')}>
           <Text style={styles.actionText}>{t('health.title')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('MilkFeed')}>
-          <Text style={styles.actionText}>{t('milk.title')}</Text>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Milk')}>
+          <Text style={styles.actionText}>{t('milk.milkOnly')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Feed')}>
+          <Text style={styles.actionText}>{t('feed.title')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('HeatTracking', { cowId: cow.cowId })}>
           <Text style={styles.actionText}>{t('heat.title')}</Text>

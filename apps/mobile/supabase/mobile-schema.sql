@@ -22,6 +22,8 @@ declare
       '"cowId" text, "recordType" text, "vaccinationType" text, date text, "nextDueDate" text, "medicineName" text, "treatmentPeriod" text, "treatmentMode" text, "medicinesGiven" text, notes text',
     'milk_feed',
       '"cowId" text, "milkingDate" text, "dryDate" text, "morningMilk" double precision, "eveningMilk" double precision, "feedGiven" text, notes text',
+    'feed_records',
+      '"cowId" text, "feedDate" text, "feedType" text, quantity double precision, unit text, notes text',
     'heat_records',
       '"cowId" text, "heatIdentificationDate" text, "conceptionDate" text, "repeatHeatDate" text, notes text',
     'calves',
