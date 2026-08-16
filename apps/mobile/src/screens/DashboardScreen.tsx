@@ -4,9 +4,13 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { localCows, localMilk, localEvents, localBulls, localCalves, getPregnancyByCow, CalendarEvent } from '../services/database';
+import { localCows, localMilk, localEvents, localBulls, localCalves, localExpenses, getPregnancyByCow, CalendarEvent } from '../services/database';
 import { formatDate } from '../utils/date';
+import { EXPENSE_CATEGORIES, formatINR } from './ExpensesScreen';
 import { COLORS, SHADOWS, RADIUS } from '../theme';
+
+const EXP_CAT = Object.fromEntries(EXPENSE_CATEGORIES.map((c) => [c.key, c]));
+const money = formatINR;
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -57,6 +61,8 @@ export default function DashboardScreen() {
   const [totalAnimals, setTotalAnimals] = useState(0); // cows + bulls + calves
   const [todayMilk, setTodayMilk] = useState(0);
   const [monthDaily, setMonthDaily] = useState<{ date: string; total: number }[]>([]);
+  const [monthExpense, setMonthExpense] = useState(0);
+  const [expenseByCat, setExpenseByCat] = useState<{ category: string; total: number }[]>([]);
   const [byCow, setByCow] = useState<{ cowId: string; date: string; total: number }[]>([]);
   const [showCharts, setShowCharts] = useState(false); // per-cow charts are opt-in
   const [showFollowUps, setShowFollowUps] = useState(true); // collapsible follow-ups list
@@ -102,6 +108,8 @@ export default function DashboardScreen() {
   const loadMonthDaily = React.useCallback(() => {
     localMilk.getMonthDaily(viewYear, viewMonth).then((md) => setMonthDaily(md || [])).catch(() => {});
     localMilk.getMonthDailyByCow(viewYear, viewMonth).then((bc) => setByCow(bc || [])).catch(() => {});
+    localExpenses.getMonthTotal(viewYear, viewMonth).then(setMonthExpense).catch(() => {});
+    localExpenses.getMonthByCategory(viewYear, viewMonth).then((c) => setExpenseByCat(c || [])).catch(() => {});
   }, [viewYear, viewMonth]);
 
   useEffect(() => { loadData(); }, []);
@@ -406,6 +414,42 @@ export default function DashboardScreen() {
         )}
       </View>
 
+      {/* Expenses summary — opens the full expense tracker */}
+      <TouchableOpacity style={styles.section} activeOpacity={0.85} onPress={() => navigation.navigate('Expenses')}>
+        <View style={styles.expHeader}>
+          <Text style={styles.sectionTitle}>{t('expenses.title')} · {MONTHS[viewMonth]}</Text>
+          <View style={styles.expOpen}>
+            <Text style={styles.expOpenText}>{t('expenses.openTracker')}</Text>
+            <MaterialIcons name="chevron-right" size={18} color="#1B5E20" />
+          </View>
+        </View>
+        <Text style={styles.expTotal}>{money(monthExpense)}</Text>
+        <Text style={styles.expTotalLabel}>{t('expenses.thisMonth')}</Text>
+
+        {expenseByCat.length === 0 ? (
+          <Text style={[styles.noEvents, { marginTop: 8 }]}>{t('expenses.noneThisMonth')}</Text>
+        ) : (
+          <View style={styles.expBreakdown}>
+            {expenseByCat.slice(0, 4).map((row) => {
+              const meta = EXP_CAT[row.category] || EXP_CAT.other;
+              const pct = monthExpense > 0 ? Math.round((row.total / monthExpense) * 100) : 0;
+              return (
+                <View key={row.category} style={styles.expRow}>
+                  <View style={[styles.expDot, { backgroundColor: meta.color }]}>
+                    <MaterialCommunityIcons name={meta.icon} size={13} color="#fff" />
+                  </View>
+                  <Text style={styles.expCatName}>{t(`expenses.cat.${row.category}`, row.category)}</Text>
+                  <View style={styles.expBarTrack}>
+                    <View style={[styles.expBarFill, { width: `${Math.max(pct, 3)}%`, backgroundColor: meta.color }]} />
+                  </View>
+                  <Text style={styles.expRowAmt}>{money(row.total)}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </TouchableOpacity>
+
       {/* Selected day details */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{formatDate(selected)}</Text>
@@ -516,6 +560,19 @@ const styles = StyleSheet.create({
   eventTitle: { fontSize: 14, color: '#333', flex: 1 },
   eventDate: { fontSize: 12, color: '#888' },
   moonNote: { fontSize: 13, color: '#6A1B9A', fontWeight: '600', marginBottom: 8 },
+
+  expHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  expOpen: { flexDirection: 'row', alignItems: 'center' },
+  expOpenText: { fontSize: 12.5, color: '#1B5E20', fontWeight: '600' },
+  expTotal: { fontSize: 28, fontWeight: 'bold', color: '#1B5E20', letterSpacing: -0.5 },
+  expTotalLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
+  expBreakdown: { marginTop: 12, gap: 8 },
+  expRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  expDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  expCatName: { fontSize: 13, color: '#333', width: 78 },
+  expBarTrack: { flex: 1, height: 7, borderRadius: 4, backgroundColor: '#EEF2EA', overflow: 'hidden' },
+  expBarFill: { height: 7, borderRadius: 4 },
+  expRowAmt: { fontSize: 13, fontWeight: '700', color: '#333', minWidth: 58, textAlign: 'right' },
 
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   summaryItem: { width: '50%', paddingVertical: 8, paddingRight: 8 },

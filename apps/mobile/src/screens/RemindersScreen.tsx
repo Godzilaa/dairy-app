@@ -118,7 +118,7 @@ export default function RemindersScreen() {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>{editingId ? t('reminders.edit') : t('reminders.add')}</Text>
             <ScrollView keyboardShouldPersistTaps="handled">

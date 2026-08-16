@@ -116,6 +116,7 @@ const createSchema = async (): Promise<void> => {
     `CREATE TABLE IF NOT EXISTS bulls (
       id TEXT PRIMARY KEY,
       cowId TEXT,
+      pashuAadhar TEXT,
       name TEXT,
       breed TEXT,
       mother TEXT,
@@ -172,6 +173,20 @@ const createSchema = async (): Promise<void> => {
       deletedAt TEXT
     )`
   );
+  await db.execAsync(
+    `CREATE TABLE IF NOT EXISTS expenses (
+      id TEXT PRIMARY KEY,
+      category TEXT,
+      amount REAL,
+      expenseDate TEXT,
+      paymentMode TEXT,
+      cowId TEXT,
+      notes TEXT,
+      createdAt TEXT,
+      updatedAt TEXT,
+      deletedAt TEXT
+    )`
+  );
 
   await runMigrations();
 };
@@ -209,7 +224,7 @@ const addColumn = async (table: string, column: string, type: string): Promise<v
 };
 
 // Tables that sync to the cloud and support soft-delete tombstones.
-const SYNCED_TABLES = ['cows', 'health_records', 'milk_feed', 'feed_records', 'heat_records', 'calves', 'bulls', 'reminders'];
+const SYNCED_TABLES = ['cows', 'health_records', 'milk_feed', 'feed_records', 'heat_records', 'calves', 'bulls', 'reminders', 'expenses'];
 
 const runMigrations = async (): Promise<void> => {
   await addColumn('health_records', 'recordType', "TEXT DEFAULT 'vaccination'");
@@ -218,6 +233,7 @@ const runMigrations = async (): Promise<void> => {
   await addColumn('health_records', 'treatmentMode', 'TEXT');
   await addColumn('health_records', 'medicinesGiven', 'TEXT');
   await addColumn('calves', 'photo', 'TEXT');
+  await addColumn('bulls', 'pashuAadhar', 'TEXT');
 
   // Soft-delete tombstones so deletions propagate across devices via sync.
   for (const tbl of SYNCED_TABLES) {
@@ -231,6 +247,8 @@ const runMigrations = async (): Promise<void> => {
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_heat_cow ON heat_records(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_calves_cow ON calves(cowId)');
   await db.execAsync('CREATE INDEX IF NOT EXISTS idx_bulls_cow ON bulls(cowId)');
+  await db.execAsync('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expenseDate)');
+  await db.execAsync('CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)');
 };
 
 export const getDb = () => db;
@@ -495,6 +513,75 @@ export const localFeed = {
   },
 };
 
+export const localExpenses = {
+  getAll: async (category?: string): Promise<any[]> => {
+    if (category) {
+      return db.getAllAsync(
+        'SELECT * FROM expenses WHERE category = ? AND deletedAt IS NULL ORDER BY expenseDate DESC, createdAt DESC',
+        [category]
+      );
+    }
+    return db.getAllAsync('SELECT * FROM expenses WHERE deletedAt IS NULL ORDER BY expenseDate DESC, createdAt DESC');
+  },
+
+  getTodayTotal: async (): Promise<number> => {
+    const today = new Date().toISOString().split('T')[0];
+    const row = await db.getFirstAsync<{ total: number }>(
+      `SELECT COALESCE(SUM(amount),0) as total FROM expenses WHERE expenseDate = ? AND deletedAt IS NULL`,
+      [today]
+    );
+    return row?.total || 0;
+  },
+
+  // Total spend for a given month (0-indexed month).
+  getMonthTotal: async (year: number, month: number): Promise<number> => {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const row = await db.getFirstAsync<{ total: number }>(
+      `SELECT COALESCE(SUM(amount),0) as total FROM expenses WHERE expenseDate LIKE ? AND deletedAt IS NULL`,
+      [`${prefix}%`]
+    );
+    return row?.total || 0;
+  },
+
+  // Per-category totals for a given month, largest first — powers the dashboard breakdown.
+  getMonthByCategory: async (year: number, month: number): Promise<{ category: string; total: number }[]> => {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    return db.getAllAsync<{ category: string; total: number }>(
+      `SELECT category, COALESCE(SUM(amount),0) as total
+       FROM expenses WHERE expenseDate LIKE ? AND deletedAt IS NULL
+       GROUP BY category ORDER BY total DESC`,
+      [`${prefix}%`]
+    );
+  },
+
+  create: async (data: any): Promise<any> => {
+    const id = uuid();
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `INSERT INTO expenses (id, category, amount, expenseDate, paymentMode, cowId, notes, createdAt, updatedAt) VALUES (?,?,?,?,?,?,?,?,?)`,
+      [id, data.category || null, data.amount ?? null, data.expenseDate, data.paymentMode || null, data.cowId || null, data.notes || null, now, now]
+    );
+    triggerSync();
+    return { id, ...data };
+  },
+
+  update: async (id: string, data: any): Promise<any> => {
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `UPDATE expenses SET category=?, amount=?, expenseDate=?, paymentMode=?, cowId=?, notes=?, updatedAt=? WHERE id=?`,
+      [data.category || null, data.amount ?? null, data.expenseDate, data.paymentMode || null, data.cowId || null, data.notes || null, now, id]
+    );
+    triggerSync();
+    return { id, ...data };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const now = new Date().toISOString();
+    await db.runAsync('UPDATE expenses SET deletedAt=?, updatedAt=? WHERE id=?', [now, now, id]);
+    triggerSync();
+  },
+};
+
 export const localReproduction = {
   getFemale: async (cowId: string): Promise<any[]> =>
     db.getAllAsync('SELECT * FROM reproduction_female WHERE cowId = ? ORDER BY createdAt DESC', [cowId]),
@@ -745,6 +832,23 @@ export const localCalves = {
     (await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) as n FROM calves WHERE deletedAt IS NULL'))?.n || 0,
 
   create: (data: any) => localCreate('calves', data),
+
+  update: async (id: string, data: any): Promise<any> => {
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `UPDATE calves SET name=?, breed=?, mother=?, father=?, dob=?, gender=?, photo=?, updatedAt=? WHERE id=?`,
+      [data.name, data.breed || null, data.mother || null, data.father || null,
+       data.dob || null, data.gender || null, data.photo || null, now, id]
+    );
+    triggerSync();
+    return { id, ...data };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const now = new Date().toISOString();
+    await db.runAsync('UPDATE calves SET deletedAt=?, updatedAt=? WHERE id=?', [now, now, id]);
+    triggerSync();
+  },
 };
 
 export const localBulls = {
@@ -755,6 +859,23 @@ export const localBulls = {
     (await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) as n FROM bulls WHERE deletedAt IS NULL'))?.n || 0,
 
   create: (data: any) => localCreate('bulls', data),
+
+  update: async (id: string, data: any): Promise<any> => {
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `UPDATE bulls SET pashuAadhar=?, name=?, breed=?, mother=?, father=?, dob=?, photo=?, updatedAt=? WHERE id=?`,
+      [data.pashuAadhar || null, data.name, data.breed || null, data.mother || null,
+       data.father || null, data.dob || null, data.photo || null, now, id]
+    );
+    triggerSync();
+    return { id, ...data };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const now = new Date().toISOString();
+    await db.runAsync('UPDATE bulls SET deletedAt=?, updatedAt=? WHERE id=?', [now, now, id]);
+    triggerSync();
+  },
 };
 
 export const localInsurance = {

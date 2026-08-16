@@ -12,6 +12,7 @@ export default function CalvesScreen() {
   const { t } = useTranslation();
   const [calves, setCalves] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [name, setName] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
@@ -28,7 +29,18 @@ export default function CalvesScreen() {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
+    setEditingId(null);
     setName(''); setPhoto(null); setBreed(''); setFather(''); setMother(''); setDob(''); setGender('');
+  };
+
+  const openAdd = () => { resetForm(); setModalVisible(true); };
+
+  const openEdit = (item: any) => {
+    setEditingId(item.id);
+    setName(item.name || ''); setPhoto(item.photo || null); setBreed(item.breed || '');
+    setFather(item.father || ''); setMother(item.mother || ''); setDob(item.dob || '');
+    setGender(item.gender || '');
+    setModalVisible(true);
   };
 
   const pickPhoto = async (fromCamera: boolean) => {
@@ -56,7 +68,7 @@ export default function CalvesScreen() {
     if (!name.trim()) { Alert.alert('Error', 'Calf name is required'); return; }
     setSaving(true);
     try {
-      await localCalves.create({
+      const payload = {
         name: name.trim(),
         photo: photo || undefined,
         breed: breed || undefined,
@@ -64,7 +76,9 @@ export default function CalvesScreen() {
         mother: mother || undefined,
         dob: dob || undefined,
         gender: gender || undefined,
-      });
+      };
+      if (editingId) await localCalves.update(editingId, payload);
+      else await localCalves.create(payload);
       setModalVisible(false);
       resetForm();
       await load();
@@ -75,8 +89,27 @@ export default function CalvesScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!editingId) return;
+    Alert.alert(t('common.delete'), 'Delete this calf?', [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await localCalves.delete(editingId);
+            setModalVisible(false);
+            resetForm();
+            await load();
+          } catch (err: any) { Alert.alert('Error', err.message); }
+        },
+      },
+    ]);
+  };
+
   const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={() => openEdit(item)}>
       {item.photo ? (
         <Image source={{ uri: item.photo }} style={styles.thumb} />
       ) : (
@@ -90,7 +123,8 @@ export default function CalvesScreen() {
         <Text style={styles.detail}>{t('calves.mother')}: {item.mother || '-'}</Text>
         {item.dob ? <Text style={styles.detail}>{t('calves.dob')}: {item.dob}</Text> : null}
       </View>
-    </View>
+      <MaterialIcons name="edit" size={18} color="#bbb" />
+    </TouchableOpacity>
   );
 
   return (
@@ -102,15 +136,15 @@ export default function CalvesScreen() {
         ListEmptyComponent={<Text style={styles.empty}>{t('common.noData')}</Text>}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => { resetForm(); setModalVisible(true); }}>
+      <TouchableOpacity style={styles.fab} onPress={openAdd}>
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>{t('calves.addCalf')}</Text>
-            <ScrollView keyboardShouldPersistTaps="handled">
+            <Text style={styles.modalTitle}>{editingId ? t('calves.editCalf') : t('calves.addCalf')}</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
               <TouchableOpacity style={styles.photoPicker} onPress={choosePhoto}>
                 {photo ? (
                   <Image source={{ uri: photo }} style={styles.photo} />
@@ -154,6 +188,12 @@ export default function CalvesScreen() {
                 <Text style={styles.saveText}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
+            {editingId && (
+              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+                <MaterialIcons name="delete-outline" size={18} color="#C62828" />
+                <Text style={styles.deleteText}>{t('common.delete')}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -195,4 +235,6 @@ const styles = StyleSheet.create({
   cancelText: { color: COLORS.textSecondary, fontWeight: '600' },
   saveBtn: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: COLORS.primary, alignItems: 'center', ...SHADOWS.soft },
   saveText: { color: '#fff', fontWeight: '600' },
+  deleteBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 12, marginTop: 10, borderRadius: 10, borderWidth: 1, borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
+  deleteText: { color: '#C62828', fontWeight: '600' },
 });

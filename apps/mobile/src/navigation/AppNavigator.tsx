@@ -23,6 +23,7 @@ import BullsScreen from '../screens/BullsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import RemindersScreen from '../screens/RemindersScreen';
 import MilkChartScreen from '../screens/MilkChartScreen';
+import ExpensesScreen from '../screens/ExpensesScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -198,6 +199,11 @@ export default function AppNavigator() {
               name="MilkChart"
               component={MilkChartScreen}
               options={{ title: 'Milk Line Graph' }}
+            />
+            <Stack.Screen
+              name="Expenses"
+              component={ExpensesScreen}
+              options={{ title: 'Expenses' }}
             />
           </>
         )}

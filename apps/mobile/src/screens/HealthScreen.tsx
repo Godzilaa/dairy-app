@@ -236,7 +236,7 @@ export default function HealthScreen() {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{editingId ? t('health.editRecord') : t('health.addRecord')}</Text>
 

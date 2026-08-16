@@ -24,12 +24,14 @@ declare
       '"cowId" text, "milkingDate" text, "dryDate" text, "morningMilk" double precision, "eveningMilk" double precision, "feedGiven" text, notes text',
     'feed_records',
       '"cowId" text, "feedDate" text, "feedType" text, quantity double precision, unit text, notes text',
+    'expenses',
+      'category text, amount double precision, "expenseDate" text, "paymentMode" text, "cowId" text, notes text',
     'heat_records',
       '"cowId" text, "heatIdentificationDate" text, "conceptionDate" text, "repeatHeatDate" text, notes text',
     'calves',
       '"cowId" text, name text, breed text, mother text, father text, dob text, gender text, photo text',
     'bulls',
-      '"cowId" text, name text, breed text, mother text, father text, dob text, photo text',
+      '"cowId" text, "pashuAadhar" text, name text, breed text, mother text, father text, dob text, photo text',
     'custom_vaccines',
       'name text'
   );

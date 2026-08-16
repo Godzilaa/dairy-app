@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "expo start",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "build": "expo export",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@clerk/expo": "^4.2.1",
