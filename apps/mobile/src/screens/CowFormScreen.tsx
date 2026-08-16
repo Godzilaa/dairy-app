@@ -29,6 +29,9 @@ export default function CowFormScreen() {
   const [cowId, setCowId] = useState(editCow?.cowId || '');
   const [photo, setPhoto] = useState<string | null>(editCow?.photo || null);
   const [status, setStatus] = useState(editCow?.status || 'Active');
+  const [pregnancyCount, setPregnancyCount] = useState<number>(
+    typeof editCow?.pregnancyCount === 'number' ? editCow.pregnancyCount : 0,
+  );
   const [loading, setLoading] = useState(false);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
@@ -126,6 +129,7 @@ export default function CowFormScreen() {
         mother: mother || undefined,
         father: father || undefined,
         registrationMethod: method || undefined,
+        pregnancyCount,
       };
       if (editCow) {
         await localCows.update(editCow.id, data);
@@ -219,6 +223,26 @@ export default function CowFormScreen() {
       <Text style={styles.label}>{t('cow.father')} ({t('common.optional')})</Text>
       <TextInput style={styles.input} value={father} onChangeText={setFather} />
 
+      <Text style={styles.label}>{t('cow.pregnancyCount')}</Text>
+      <View style={styles.stepperRow}>
+        <TouchableOpacity
+          style={[styles.stepperBtn, pregnancyCount <= 0 && styles.stepperBtnDisabled]}
+          onPress={() => setPregnancyCount((n) => Math.max(0, n - 1))}
+          disabled={pregnancyCount <= 0}>
+          <MaterialIcons name="remove" size={22} color={pregnancyCount <= 0 ? '#BDBDBD' : '#1B5E20'} />
+        </TouchableOpacity>
+        <View style={styles.stepperValueWrap}>
+          <Text style={styles.stepperValue}>{pregnancyCount}</Text>
+          <Text style={styles.stepperUnit}>{t('cow.timesUnit')}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={() => setPregnancyCount((n) => n + 1)}>
+          <MaterialIcons name="add" size={22} color="#1B5E20" />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.hint}>{t('cow.pregnancyCountHint')}</Text>
+
       {/* Registration method is a create-time field — hidden when editing. */}
       {!editCow && (
         <>
@@ -282,6 +306,18 @@ const styles = StyleSheet.create({
   statusChipActive: { backgroundColor: '#1B5E20' },
   statusChipText: { fontSize: 13, color: '#555' },
   statusChipTextActive: { color: '#fff', fontWeight: '600' },
+  stepperRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: 8,
+  },
+  stepperBtn: {
+    width: 44, height: 44, borderRadius: 10, backgroundColor: '#E8F5E9',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#A5D6A7',
+  },
+  stepperBtnDisabled: { backgroundColor: '#F5F5F5', borderColor: '#E0E0E0' },
+  stepperValueWrap: { flex: 1, alignItems: 'center' },
+  stepperValue: { fontSize: 22, fontWeight: 'bold', color: COLORS.textPrimary },
+  stepperUnit: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   tagRow: { flexDirection: 'row', gap: 10 },
   scanBtn: {
     backgroundColor: '#1565C0', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center',

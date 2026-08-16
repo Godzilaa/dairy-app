@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import { localExpenses } from '../services/database';
 import DateField from '../components/DateField';
+import ExpensePieChart, { PieSlice } from '../components/ExpensePieChart';
 import { formatDate } from '../utils/date';
 import { COLORS, SHADOWS, RADIUS } from '../theme';
 
@@ -83,6 +84,22 @@ export default function ExpensesScreen() {
     }
     return { month, today: todaySum };
   }, [records]);
+
+  // Category breakdown for the pie chart, across the visible (filtered) records.
+  // Sorted by spend descending so the biggest categories lead the legend.
+  const breakdown = useMemo<PieSlice[]>(() => {
+    const sums: Record<string, number> = {};
+    for (const r of records) {
+      const key = r.category || 'other';
+      sums[key] = (sums[key] || 0) + (r.amount || 0);
+    }
+    return EXPENSE_CATEGORIES
+      .map((c) => ({ key: c.key, label: catLabel(c.key), color: c.color, value: sums[c.key] || 0 }))
+      .filter((s) => s.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [records]);
+
+  const breakdownTotal = breakdown.reduce((sum, s) => sum + s.value, 0);
 
   const resetForm = () => {
     setEditingId(null);
@@ -184,6 +201,28 @@ export default function ExpensesScreen() {
           <Text style={[styles.totalValue, styles.totalToday]}>{money(totals.today)}</Text>
         </View>
       </View>
+
+      {/* Spend-by-category pie chart */}
+      {breakdown.length > 0 && (
+        <View style={styles.pieCard}>
+          <Text style={styles.pieTitle}>{t('expenses.byCategory')}</Text>
+          <View style={styles.pieRow}>
+            <ExpensePieChart slices={breakdown} size={140} strokeWidth={28} />
+            <View style={styles.legend}>
+              {breakdown.map((s) => {
+                const pct = Math.round((s.value / breakdownTotal) * 100);
+                return (
+                  <View key={s.key} style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: s.color }]} />
+                    <Text style={styles.legendLabel} numberOfLines={1}>{s.label}</Text>
+                    <Text style={styles.legendValue}>{money(s.value)} · {pct}%</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Category filter chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow} contentContainerStyle={{ paddingRight: 12 }}>
@@ -308,6 +347,18 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 12.5, color: '#C8E6C9', marginBottom: 4, fontWeight: '600' },
   totalValue: { fontSize: 26, fontWeight: 'bold', color: '#fff', letterSpacing: -0.5 },
   totalToday: { fontSize: 22, color: '#FFF9C4' },
+
+  pieCard: {
+    backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, marginBottom: 14,
+    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
+  },
+  pieTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 12 },
+  pieRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  legend: { flex: 1, gap: 7 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { flex: 1, fontSize: 12.5, color: COLORS.textSecondary },
+  legendValue: { fontSize: 12.5, fontWeight: '700', color: COLORS.textPrimary },
 
   chipRow: { flexGrow: 0, marginBottom: 12 },
   chip: {

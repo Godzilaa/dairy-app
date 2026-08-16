@@ -45,6 +45,10 @@ export default function CowDetailScreen() {
         <InfoRow label={t('cow.dob')} value={formatDate(cow.dob) || '-'} />
         <InfoRow label={t('cow.mother')} value={cow.mother || '-'} />
         <InfoRow label={t('cow.father')} value={cow.father || '-'} />
+        <InfoRow
+          label={t('cow.pregnancyCount')}
+          value={cow.pregnancyCount ? `${cow.pregnancyCount} ${t('cow.timesUnit')}` : '-'}
+        />
       </View>
 
       <View style={styles.actions}>

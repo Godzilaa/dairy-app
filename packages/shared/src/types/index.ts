@@ -33,6 +33,7 @@ export interface Cow {
   photo?: string;
   registrationMethod?: RegistrationMethod;
   insuranceId?: string;
+  pregnancyCount?: number; // number of times the cow has been pregnant / calved
   syncStatus: SyncStatus;
   createdAt: string;
   updatedAt: string;

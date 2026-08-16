@@ -18,6 +18,7 @@ const createSchema = async (): Promise<void> => {
       photo TEXT,
       registrationMethod TEXT,
       insuranceId TEXT,
+      pregnancyCount INTEGER,
       createdAt TEXT,
       updatedAt TEXT
     )`
@@ -234,6 +235,7 @@ const runMigrations = async (): Promise<void> => {
   await addColumn('health_records', 'medicinesGiven', 'TEXT');
   await addColumn('calves', 'photo', 'TEXT');
   await addColumn('bulls', 'pashuAadhar', 'TEXT');
+  await addColumn('cows', 'pregnancyCount', 'INTEGER');
 
   // Soft-delete tombstones so deletions propagate across devices via sync.
   for (const tbl of SYNCED_TABLES) {
@@ -284,11 +286,11 @@ export const localCows = {
     const id = uuid();
     const now = new Date().toISOString();
     await db.runAsync(
-      `INSERT INTO cows (id, cowId, pashuAadhar, name, breed, dob, mother, father, status, photo, registrationMethod, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO cows (id, cowId, pashuAadhar, name, breed, dob, mother, father, status, photo, registrationMethod, pregnancyCount, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [id, data.cowId, data.pashuAadhar || null, data.name, data.breed, data.dob || null,
        data.mother || null, data.father || null, data.status || 'Active', data.photo || null,
-       data.registrationMethod || null, now, now]
+       data.registrationMethod || null, data.pregnancyCount ?? null, now, now]
     );
     triggerSync();
     return { id, ...data };
@@ -297,10 +299,10 @@ export const localCows = {
   update: async (id: string, data: any): Promise<any> => {
     const now = new Date().toISOString();
     await db.runAsync(
-      `UPDATE cows SET name=?, breed=?, pashuAadhar=?, dob=?, mother=?, father=?, status=?, photo=?, registrationMethod=?, updatedAt=? WHERE id=?`,
+      `UPDATE cows SET name=?, breed=?, pashuAadhar=?, dob=?, mother=?, father=?, status=?, photo=?, registrationMethod=?, pregnancyCount=?, updatedAt=? WHERE id=?`,
       [data.name, data.breed, data.pashuAadhar || null, data.dob || null,
        data.mother || null, data.father || null, data.status || 'Active',
-       data.photo || null, data.registrationMethod || null, now, id]
+       data.photo || null, data.registrationMethod || null, data.pregnancyCount ?? null, now, id]
     );
     triggerSync();
     return { id, ...data };
