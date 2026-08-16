@@ -21,6 +21,17 @@ const addDays = (iso: string, days: number): string => {
   return d.toISOString().split('T')[0];
 };
 
+// One labelled date row inside a heat card. The expected-due row is highlighted
+// (brown) since it's the value farmers act on; empty values render as a muted dash.
+const DetailRow = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <View style={styles.detailRow}>
+    <Text style={styles.detailLabel}>{label}</Text>
+    <Text style={[styles.detailValue, highlight && styles.detailValueDue, !value && styles.detailValueEmpty]}>
+      {value || '—'}
+    </Text>
+  </View>
+);
+
 export default function HeatTrackingScreen() {
   const { t } = useTranslation();
   const route = useRoute<any>();
@@ -117,35 +128,42 @@ export default function HeatTrackingScreen() {
         autoCapitalize="characters"
       />
 
-      {/* Table */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View>
-          <View style={[styles.row, styles.headerRow]}>
-            <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.heatIdentification')}</Text>
-            <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.conception')}</Text>
-            <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.expectedDueDate')}</Text>
-            <Text style={[styles.cell, styles.headerCell, styles.colDate]}>{t('heat.repeatHeatDate')}</Text>
-            <Text style={[styles.cell, styles.headerCell, styles.colNotes]}>{t('heat.notes')}</Text>
+      {/* Card list */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 96 }} showsVerticalScrollIndicator={false}>
+        {records.length === 0 ? (
+          <View style={styles.empty}>
+            <MaterialIcons name="favorite-border" size={44} color={COLORS.textMuted} />
+            <Text style={styles.emptyText}>{t('common.noData')}</Text>
           </View>
-          <ScrollView>
-            {records.length === 0 ? (
-              <Text style={styles.empty}>{t('common.noData')}</Text>
-            ) : (
-              records.map((r, i) => (
-                <TouchableOpacity key={r.id || i} style={[styles.row, i % 2 === 1 && styles.rowAlt]} onPress={() => openEdit(r)}>
-                  <Text style={[styles.cell, styles.colDate]}>{formatDate(r.heatIdentificationDate) || '-'}</Text>
-                  <Text style={[styles.cell, styles.colDate]}>{formatDate(r.conceptionDate) || '-'}</Text>
-                  <Text style={[styles.cell, styles.colDate, styles.dueCell]}>{formatDate(expectedDueDate(r.conceptionDate)) || '-'}</Text>
-                  <Text style={[styles.cell, styles.colDate]}>{formatDate(r.repeatHeatDate) || '-'}</Text>
-                  <View style={[styles.cell, styles.colNotes, styles.notesCell]}>
-                    <Text style={styles.notesText} numberOfLines={1}>{r.notes || '-'}</Text>
-                    <MaterialIcons name="edit" size={15} color="#bbb" />
+        ) : (
+          records.map((r, i) => {
+            const due = expectedDueDate(r.conceptionDate);
+            return (
+              <TouchableOpacity key={r.id || i} style={styles.card} onPress={() => openEdit(r)}>
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardHeaderLeft}>
+                    <View style={styles.heatIcon}>
+                      <MaterialIcons name="favorite" size={15} color="#C2185B" />
+                    </View>
+                    <Text style={styles.cardCow}>{r.cowId || '-'}</Text>
                   </View>
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
-        </View>
+                  <MaterialIcons name="edit" size={15} color="#bbb" />
+                </View>
+
+                <DetailRow label={t('heat.heatIdentification')} value={formatDate(r.heatIdentificationDate)} />
+                <DetailRow label={t('heat.conception')} value={formatDate(r.conceptionDate)} />
+                <DetailRow label={t('heat.expectedDueDate')} value={formatDate(due)} highlight />
+                <DetailRow label={t('heat.repeatHeatDate')} value={formatDate(r.repeatHeatDate)} />
+                {r.notes ? (
+                  <View style={styles.notesRow}>
+                    <MaterialIcons name="sticky-note-2" size={14} color={COLORS.textMuted} />
+                    <Text style={styles.notesText} numberOfLines={2}>{r.notes}</Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={openAdd}>
@@ -204,17 +222,24 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg, padding: 16 },
   title: { fontSize: 20, fontWeight: 'bold', color: COLORS.textPrimary },
   input: { backgroundColor: COLORS.surface, borderRadius: RADIUS.md, padding: 12, fontSize: 15, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border },
-  row: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E8E8E8', backgroundColor: '#fff' },
-  rowAlt: { backgroundColor: '#FAFAFA' },
-  headerRow: { backgroundColor: '#C2185B', borderTopLeftRadius: 8, borderTopRightRadius: 8 },
-  cell: { paddingVertical: 12, paddingHorizontal: 10, fontSize: 13, color: COLORS.textPrimary },
-  headerCell: { color: '#fff', fontWeight: '700', fontSize: 12 },
-  colDate: { width: 130 },
-  colNotes: { width: 160 },
-  notesCell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
-  notesText: { fontSize: 13, color: COLORS.textPrimary, flex: 1 },
-  dueCell: { color: '#8D5E34', fontWeight: '600' },
-  empty: { textAlign: 'center', marginTop: 40, color: COLORS.textMuted, width: 680 },
+
+  card: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heatIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FCE4EC', alignItems: 'center', justifyContent: 'center' },
+  cardCow: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+
+  detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5 },
+  detailLabel: { fontSize: 13.5, color: COLORS.textSecondary },
+  detailValue: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  detailValueDue: { color: '#8D5E34' },
+  detailValueEmpty: { color: COLORS.textMuted, fontWeight: '400' },
+
+  notesRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
+  notesText: { fontSize: 13, color: COLORS.textSecondary, flex: 1 },
+
+  empty: { alignItems: 'center', paddingTop: 60, gap: 10 },
+  emptyText: { fontSize: 14, color: COLORS.textMuted },
   fab: {
     position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28,
     backgroundColor: '#C2185B', alignItems: 'center', justifyContent: 'center', elevation: 4,
