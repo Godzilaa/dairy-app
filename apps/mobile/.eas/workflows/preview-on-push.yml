@@ -1,0 +1,18 @@
+# Build an installable Android APK automatically on every push to main, so the
+# team always has the latest testable build. Requires the repo to be connected
+# to this EAS project (install the Expo GitHub App from the project's GitHub
+# settings on expo.dev) for the push trigger to fire.
+name: Preview build on push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_android_preview:
+    name: Build Android APK (preview)
+    type: build
+    params:
+      platform: android
+      profile: preview

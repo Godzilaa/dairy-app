@@ -1,0 +1,27 @@
+# Create Android + iOS builds on demand.
+# Run it manually with:  eas workflow:run .eas/workflows/create-builds.yml
+# Uses the "preview" profile from eas.json (internal distribution → installable
+# APK for Android, ad-hoc/simulator build for iOS).
+name: Create builds
+
+on:
+  # Manual runs only. Uncomment to also build automatically on every push to main:
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch: {}
+
+jobs:
+  build_android:
+    name: Build Android (preview)
+    type: build
+    params:
+      platform: android
+      profile: preview
+
+  build_ios:
+    name: Build iOS (preview)
+    type: build
+    params:
+      platform: ios
+      profile: preview

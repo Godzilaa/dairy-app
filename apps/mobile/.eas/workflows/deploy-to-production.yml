@@ -1,0 +1,44 @@
+# Build production binaries for both platforms and submit them to the stores.
+# Run manually when you're ready to ship:
+#   eas workflow:run .eas/workflows/deploy-to-production.yml
+#
+# The submit_* jobs require store credentials to be configured first:
+#   - Android: a Google Play service-account key (eas.json > submit.production.android)
+#   - iOS:     an App Store Connect API key (eas.json > submit.production.ios)
+# Until those are set up, comment out the submit_* jobs and this workflow will
+# just produce the production builds.
+name: Deploy to production
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build_android:
+    name: Build Android (production)
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  build_ios:
+    name: Build iOS (production)
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_android:
+    name: Submit Android to Google Play
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production
+
+  submit_ios:
+    name: Submit iOS to App Store
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
