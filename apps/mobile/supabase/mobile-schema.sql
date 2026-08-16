@@ -17,7 +17,7 @@ declare
   cols text;
   tables jsonb := jsonb_build_object(
     'cows',
-      '"cowId" text, "pashuAadhar" text, name text, breed text, dob text, mother text, father text, status text, photo text, "registrationMethod" text, "insuranceId" text',
+      '"cowId" text, "pashuAadhar" text, name text, breed text, dob text, mother text, father text, status text, photo text, "registrationMethod" text, "insuranceId" text, "pregnancyCount" integer',
     'health_records',
       '"cowId" text, "recordType" text, "vaccinationType" text, date text, "nextDueDate" text, "medicineName" text, "treatmentPeriod" text, "treatmentMode" text, "medicinesGiven" text, notes text',
     'milk_feed',
