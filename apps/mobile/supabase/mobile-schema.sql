@@ -1,7 +1,12 @@
 -- Gopala mobile ⇄ Supabase sync schema.
 -- Mirrors the on-device SQLite tables (apps/mobile/src/services/database.ts) so the
--- phone can push/pull rows keyed to the signed-in user's email (owner_email).
+-- phone can push/pull rows keyed to the signed-in user (owner_id). The set of tables
+-- here matches TABLES in apps/mobile/src/services/cloudSync.ts.
 -- Column names are kept camelCase (quoted) to match what the app already sends.
+--
+-- Rows are scoped by owner_id, which holds the auth provider's subject id (the
+-- `sub` claim of the JWT the app sends to Supabase). RLS below enforces that a user
+-- only sees their own rows.
 --
 -- Apply with:  node apps/mobile/supabase/apply-schema.mjs
 -- (uses the DATABASE_URL in apps/api/.env)
@@ -33,23 +38,26 @@ declare
     'bulls',
       '"cowId" text, "pashuAadhar" text, name text, breed text, mother text, father text, dob text, photo text',
     'custom_vaccines',
-      'name text'
+      'name text',
+    'reminders',
+      'title text, details text, date text, time text, done integer'
   );
 begin
   for tbl, cols in select * from jsonb_each_text(tables) loop
     execute format(
       'create table if not exists public.%I (
          id text primary key,
-         owner_email text not null,
+         owner_id text not null,
          %s,
          "createdAt" text,
          "updatedAt" text,
-         updated_at timestamptz not null default now()
+         updated_at timestamptz not null default now(),
+         "deletedAt" text
        )', tbl, cols);
 
     -- owner-scoped lookups + incremental pulls
-    execute format('create index if not exists %I on public.%I (owner_email)', tbl || '_owner_idx', tbl);
-    execute format('create index if not exists %I on public.%I (owner_email, updated_at)', tbl || '_sync_idx', tbl);
+    execute format('create index if not exists %I on public.%I (owner_id)', tbl || '_owner_idx', tbl);
+    execute format('create index if not exists %I on public.%I (owner_id, updated_at)', tbl || '_sync_idx', tbl);
 
     -- keep updated_at fresh
     execute format('drop trigger if exists %I on public.%I', tbl || '_set_updated', tbl);
@@ -58,18 +66,18 @@ begin
          for each row execute function set_updated_at()',
       tbl || '_set_updated', tbl);
 
-    -- row-level security, scoped to the owner's email
+    -- row-level security, scoped to the owner's auth subject id
     execute format('alter table public.%I enable row level security', tbl);
     execute format('drop policy if exists owner_all on public.%I', tbl);
 
-    -- SECURE (default): requires Clerk configured as a Supabase third-party auth
-    -- provider, with the Clerk JWT carrying an `email` claim.
+    -- SECURE (default): requires the app's auth provider configured as a Supabase
+    -- third-party auth provider, with the JWT carrying a `sub` (subject) claim.
     execute format(
       'create policy owner_all on public.%I
-         using ( (auth.jwt() ->> ''email'') = owner_email )
-         with check ( (auth.jwt() ->> ''email'') = owner_email )', tbl);
+         using ( (auth.jwt() ->> ''sub'') = owner_id )
+         with check ( (auth.jwt() ->> ''sub'') = owner_id )', tbl);
 
-    -- QUICK/INSECURE alternative (anon key, no Clerk JWT). To use this instead,
+    -- QUICK/INSECURE alternative (anon key, no JWT). To use this instead,
     -- comment out the policy above and uncomment the one below:
     -- execute format('create policy owner_all on public.%I using (true) with check (true)', tbl);
   end loop;
